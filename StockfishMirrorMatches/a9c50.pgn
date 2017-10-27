@@ -1,0 +1,20 @@
+[Event "?"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish 271017 64"]
+[Black "Stockfish 271017 64"]
+[Result "0-1"]
+
+1. Nc3 d5 2. e3 e5 3. Qh5 Nc6 4. Bb5 Ne7 5. Qxe5 Qd7 6. Qf4 a6 7. Ba4 b5 8.
+Bxb5 axb5 9. Nxb5 Ne5 10. Qxe5 Qxb5 11. Nf3 c5 12. d3 Be6 13. O-O Nc6 14. Qc3
+Nb4 15. a3 Nc6 16. Ng5 d4 17. Qd2 Bd6 18. exd4 Nxd4 19. Qd1 Qb8 20. f4 h5 21.
+h3 Be7 22. a4 Bd7 23. Re1 Bxa4 24. b3 Bc6 25. Bd2 Rxa1 26. Qxa1 Kf8 27. Qc1 Qa8
+28. g3 Qa2 29. Qd1 Nxc2 30. Qb1 Qxb1 31. Rxb1 Bb5 32. Nf3 Bxd3 33. Rc1 Be4 34.
+Bc3 Bxf3 35. Rxc2 Bd5 36. Rd2 Bc6 37. Re2 Bd6 38. Be5 Rh6 39. Kf2 Kg8 40. Bxd6
+Rxd6 41. Rc2 Rd5 42. b4 f6 43. Rxc5 Rxc5 44. bxc5 Kf7 45. f5 Ke7 46. Ke3 Kd7
+47. Kf4 Bg2 48. h4 Bh3 49. Ke4 Kc6 50. Kf4 Kxc5 51. Ke4 Kc4 52. Ke3 Kd5 53. Kf3
+Bxf5 54. Ke3 Ke5 55. Kf3 Kd4 56. Kf4 Be6 57. Kf3 Bd5+ 58. Kf4 g6 59. g4 hxg4
+60. Kxg4 Bb3 61. Kf3 Bd1+ 62. Kf2 f5 63. Ke1 Bg4 64. Kf2 f4 65. Kg1 Ke3 66. Kh2
+f3 67. Kg3 f2 68. Kxg4 f1=Q 69. Kg5 Qf4+ 70. Kxg6 Qxh4 71. Kf7 Qd8 72. Ke6 Kf4
+73. Kf7 Kf5 74. Kg7 Qe7+ 75. Kh8 Kf6 76. Kg8 Qg7# 0-1
