@@ -3,7 +3,6 @@ import hashlib
 import math
 import cairosvg
 import time
-import copy
 import sys
 import argparse
 import moviepy.editor as mpy
@@ -17,6 +16,7 @@ THREADS = 4
 parser = argparse.ArgumentParser(description="Create custom Stockfish mirror matches.")
 parser.add_argument("strength_levels", default=[20,20], nargs='*')
 parser.add_argument("movetime", default=250, nargs='?')
+parser.add_argument("--no_draw", action='store_true', help="Prevents engine from claiming draw.")
 parser.add_argument("--gif", action='store_true', help="Save GIF of last played match.")
 CLI_args = parser.parse_args()
 
@@ -26,6 +26,8 @@ STRENGTH_1 = max(0, min(int(CLI_args.strength_levels[0]), 20))
 STRENGTH_2 = max(0, min(int(CLI_args.strength_levels[1]), 20))
 
 MOVETIME = CLI_args.movetime
+
+CLAIM_DRAW = not CLI_args.no_draw
 
 # Easily open a UCI connection to local stockfish
 stockfish = uci.popen_engine(ROOT_DIR+"stockfish")
@@ -39,8 +41,8 @@ game.headers["White"] = stockfish.name
 game.headers["Black"] = stockfish.name
 board = chess.Board()
 stockfish.position(board)
-stockfish.setoption({'Threads': THREADS}, async_callback=(lambda x: print("Using "+str(THREADS)+" threads.")))
-BOARDS = [board]
+stockfish.setoption({'Threads': THREADS}, async_callback=
+	(lambda x: print("Using "+str(THREADS)+" threads.")))
 
 def update_strength(turn):
 	if turn:
@@ -63,13 +65,12 @@ node = game
 update_strength(board.turn)
 (best_move,ponder_move) = stockfish.go(movetime=MOVETIME)
 while(best_move is not None):
-    if board.can_claim_draw():
-        break
+    if board.is_game_over(claim_draw=CLAIM_DRAW):
+    	break
     best_move = chess.Move.from_uci(str(best_move))
     board.push(best_move)
     node = node.add_variation(best_move)
     stockfish.position(board)
-    BOARDS.append(copy.deepcopy(board))
     if GIF:
     	write_tmp_png(chess.svg.board(board=board), move_count)
     update_strength(board.turn)
@@ -83,10 +84,10 @@ if GIF:
 
 	print("GIF written to 'chess_game.gif'")
 
-print(board.result())
+print(board.result(claim_draw=CLAIM_DRAW))
 print("In " + str(math.floor(move_count/2)) + " Moves")
 
-game.headers["Result"] = board.result()
+game.headers["Result"] = board.result(claim_draw=CLAIM_DRAW)
 
 final_fen = board.fen()
 
