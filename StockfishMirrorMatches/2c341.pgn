@@ -1,0 +1,34 @@
+[Event "?"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish 271017 64"]
+[Black "Stockfish 271017 64"]
+[Result "1/2-1/2"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bc5 5. Be3 Bxd4 6. Bxd4 Nf6 7. Nc3 d6 8.
+Be3 Qe7 9. Bd3 h6 10. Qd2 O-O 11. O-O-O Be6 12. Kb1 Rfd8 13. Rhe1 Nb4 14. a3
+Nxd3 15. Qxd3 d5 16. Bxh6 d4 17. Qg3 Nh5 18. Qg5 Qxg5 19. Bxg5 f6 20. Nb5 Bc4
+21. Bc1 Bxb5 22. g4 Kf7 23. gxh5 d3 24. h6 dxc2+ 25. Kxc2 Rxd1 26. Rxd1 Rh8 27.
+Be3 gxh6 28. f3 Re8 29. Rd2 Bc6 30. Bxh6 f5 31. exf5 Kf6 32. Bf4 Bxf3 33. Bxc7
+Re3 34. Rf2 Be4+ 35. Kd2 Rb3 36. Kc1 Rf3 37. Rxf3 Bxf3 38. Kd2 Bc6 39. Kd3 Kg5
+40. Kd4 Kf6 41. b3 Bd7 42. Kc5 Bc6 43. Bb8 a6 44. a4 Kg5 45. f6 Kxf6 46. a5 Bf3
+47. Bg3 Kg6 48. Kb6 Bd5 49. b4 Kg5 50. Bd6 Kg4 51. Bc7 Bc6 52. Bd8 Kf4 53. Bc7+
+Kg5 54. Be5 Kg4 55. Bd4 Be4 56. Bc3 Kh3 57. Be5 Bf3 58. Bb8 Bd5 59. Bd6 Bg2 60.
+Be5 Bc6 61. Bg3 Bd5 62. Kc5 Bg2 63. b5 Be4 64. b6 Bc6 65. Kb4 Kg2 66. Bd6 Kf3
+67. Kc5 Bb5 68. Kd4 Be8 69. Kc5 Bb5 70. Bb8 Ke4 71. Bc7 Bc6 72. Kb4 Bd7 73. Kc5
+Be6 74. Bg3 Ba2 75. Bf2 Bd5 76. Bg3 Be6 77. Bc7 Bf7 78. Bd6 Bg6 79. Kb4 Kf5 80.
+Bg3 Be8 81. Kc3 Kg4 82. Bd6 Kf3 83. Be7 Kf4 84. Kd3 Bh5 85. Bd6+ Kf3 86. Kc3
+Bg6 87. Bc5 Be4 88. Bd6 Bd5 89. Bg3 Ba2 90. Be5 Bg8 91. Bd6 Ba2 92. Bg3 Bf7 93.
+Kd3 Bb3 94. Kc3 Ba2 95. Bb8 Bg8 96. Kb4 Bh7 97. Be5 Be4 98. Bd6 Kg2 99. Bg3 Kh3
+100. Bd6 Bd3 101. Bg3 Kg2 102. Kc5 Bg6 103. Be5 Kf3 104. Bc7 Be4 105. Kb4 Bd5
+106. Bd6 Bc6 107. h3 Be8 108. h4 Kg2 109. Kc3 Bh5 110. Bc7 Be8 111. Kd4 Bh5
+112. Ke4 Kh3 113. Bd8 Kg4 114. Be7 Bf7 115. Ke3 Ba2 116. Kd2 Bc4 117. Kc3 Bf7
+118. Kc2 Bc4 119. Kc3 Bg8 120. Bg5 Ba2 121. Kb2 Bg8 122. Ka3 Be6 123. Kb2 Bf5
+124. Kb3 Bd3 125. Be7 Bb1 126. Bf6 Bh7 127. Bg5 Bg6 128. Kb4 Bf7 129. Kc5 Be6
+130. Be7 Bb3 131. Kd6 Bg8 132. Bd8 Bb3 133. Bf6 Bf7 134. Bg5 Ba2 135. Kc7 Bd5
+136. Kc8 Bf3 137. Bd8 Be4 138. Kd7 Bg2 139. Kc7 Bf3 140. Kd6 Bd1 141. Bf6 Bc2
+142. Kc7 Be4 143. Kd8 Bc6 144. Bg5 Bf3 145. Kd7 Be4 146. Ke6 Bf3 147. Ke5 Bc6
+148. Bf6 Be8 149. Ke6 Bb5 150. h5 Kxh5 151. Kd6 Kg4 152. Ba1 Be8 153. Bb2 Bg6
+154. Bc3 Be4 155. Bb2 Bd3 156. Ba1 Bb5 157. Bb2 Bd3 158. Ba1 Kf3 159. Bb2
+1/2-1/2

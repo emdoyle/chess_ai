@@ -1,4 +1,4 @@
-# I absolutely hate this
+# I absolutely hate this sys path stuff
 import sys
 sys.path.append(sys.path[0] + "/..")
 
@@ -10,7 +10,7 @@ from chess import pgn
 
 PKG_DIR = '/Users/evanmdoyle/Programming/ChessAI/'
 PGN_DIR = os.fsencode(PKG_DIR+'StockfishMirrorMatches/')
-DATA_DIR = PKG_DIR+'DerivedData/'
+DATA_DIR = PKG_DIR+'DerivedData/heatmaps/'
 MATCHES_PATH = PKG_DIR+'StockfishMirrorMatches/'
 SQUARES = chess.SQUARES
 
@@ -19,7 +19,7 @@ for pgn_file in os.listdir(PGN_DIR):
 	game = pgn.read_game(open(MATCHES_PATH+file_name, 'r'))
 	board = game.board()
 	moves = 0
-	with open(DATA_DIR+"stockfishdata_"+file_name[:-4]+".csv", 'w') as f:
+	with open(DATA_DIR+"heatmap_"+file_name[:-4]+".csv", 'w') as f:
 		for move in game.main_line():
 			moves += 1
 			heatmap = util.build_heatmap(board)

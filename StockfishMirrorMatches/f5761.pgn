@@ -1,0 +1,32 @@
+[Event "?"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Stockfish 271017 64"]
+[Black "Stockfish 271017 64"]
+[Result "1/2-1/2"]
+
+1. e4 e5 2. Bc4 Nf6 3. d3 c6 4. Bb3 a5 5. c4 d5 6. cxd5 a4 7. Bxa4 Bg4 8. Ne2
+Bb4+ 9. Nd2 O-O 10. a3 Bxe2 11. Kxe2 b5 12. Bb3 Bc5 13. Nf3 cxd5 14. Bg5 dxe4
+15. dxe4 Nbd7 16. Qd3 Qb6 17. Bh4 Rad8 18. Rhd1 Be7 19. h3 b4 20. a4 Nc5 21.
+Qe3 Qa6+ 22. Ke1 Nd3+ 23. Rxd3 Qxd3 24. Nxe5 Qxe3+ 25. fxe3 Rde8 26. Nc6 Bd6
+27. Ke2 Nxe4 28. Rd1 Bc5 29. Rd5 Ng3+ 30. Bxg3 Rxe3+ 31. Kf2 Rxb3+ 32. Rxc5
+Rxb2+ 33. Kf1 Ra8 34. Rb5 Rb1+ 35. Ke2 Rb2+ 36. Kf1 Rb1+ 37. Kf2 f6 38. a5 Rb2+
+39. Kg1 b3 40. Kh2 g6 41. Ne7+ Kf7 42. Nc6 g5 43. h4 gxh4 44. Rb7+ Ke6 45. Bxh4
+Kd5 46. Ne7+ Kc4 47. Bxf6 Ra2 48. Rc7+ Kb4 49. Nd5+ Ka3 50. Be7+ Kb2 51. Nb4
+Ka3 52. a6 Rd2 53. a7 b2 54. Rb7 Kb3 55. Rb8 Rxa7 56. Nc6+ Ka2 57. Nxa7 b1=Q
+58. Rxb1 Kxb1 59. Nc6 Kc2 60. Bg5 Rf2 61. Kg3 Rf8 62. Nd4+ Kd1 63. Be7 Re8 64.
+Bd6 h5 65. Nf5 Ke1 66. Kf3 Rh8 67. Ng3 Rh7 68. Bb4+ Kd1 69. Ne2 Rb7 70. Ba5 Ra7
+71. Bc3 Rc7 72. Ba5 Rc5 73. Bc3 Rc7 74. Ba5 Ra7 75. Bb4 Rb7 76. Bc5 Rf7+ 77.
+Ke3 Rh7 78. Nf4 Rd7 79. Bf8 Rh7 80. Nd3 Rb7 81. Bb4 Rb6 82. Bc3 Ra6 83. Nf4 Ra2
+84. Bb4 Ra4 85. Bc3 Ra3 86. Ne2 h4 87. Kf3 Rb3 88. Kf2 Ra3 89. Bb2 Ra7 90. Kf3
+Ke1 91. Be5 Ra3+ 92. Bc3+ Kf1 93. Kg4 Kxe2 94. Bf6 Kf1 95. Be7 Ra1 96. Bf6 Rb1
+97. Bxh4 Rb4+ 98. Kg5 Kxg2 99. Kh5 Kf3 100. Bg5 Ke4 101. Kg6 Rb6+ 102. Kg7 Kf5
+103. Bh4 Rb7+ 104. Kf8 Ke5 105. Kg8 Ra7 106. Bg5 Rd7 107. Bc1 Kd5 108. Be3 Rc7
+109. Bg1 Rb7 110. Kf8 Rh7 111. Kg8 Rd7 112. Bb6 Ke5 113. Ba5 Ke4 114. Kf8 Rb7
+115. Ke8 Kd5 116. Bc3 Kd6 117. Bd4 Re7+ 118. Kf8 Rb7 119. Ke8 Re7+ 120. Kf8 Rh7
+121. Bf2 Kd7 122. Be3 Re7 123. Bf2 Re2 124. Bd4 Rd2 125. Bc3 Rd5 126. Bb2 Rd2
+127. Bc3 Rf2+ 128. Kg8 Rf5 129. Be1 Re5 130. Bb4 Ke6 131. Bc3 Rh5 132. Bg7 Rh4
+133. Kf8 Rc4 134. Bh6 Rc7 135. Bg5 Rh7 136. Kg8 Rf7 137. Bh4 Rc7 138. Bg3 Rc2
+139. Bh4 Rg2+ 140. Kf8 Re2 141. Kg7 Rg2+ 142. Kh6 Kf5 143. Be1 Ra2 144. Bg3 Rd2
+145. Bb8 Rc2 146. Ba7 Rd2 147. Bc5 Rc2 148. Be7 Rd2 1/2-1/2
