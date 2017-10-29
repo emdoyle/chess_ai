@@ -3,8 +3,8 @@ import os
 DATA_DIR = "/Users/evanmdoyle/Programming/ChessAI/DerivedData/"
 GAME_DIR = "/Users/evanmdoyle/Programming/ChessAI/StockfishMirrorMatches/"
 
-DATA_SUBDIRS = ['off_heatmaps/', 'def_heatmaps/']
-SUBDIR_NAMES = [s[:-2]+"_" for s in DATA_SUBDIRS]
+DATA_SUBDIRS = ['off_heatmaps/', 'def_heatmaps/', 'labels/']
+SUBDIR_NAMES = [s[:-1]+"_" for s in DATA_SUBDIRS]
 
 DST_DIR = DATA_DIR + "complete/"
 
@@ -21,7 +21,10 @@ for data_file in os.listdir(os.fsencode(GAME_DIR)):
 			file_length = len(file_contents[DATA_SUBDIRS[k]])
 	with open(DST_DIR+file_name[:-4]+".csv", 'w') as f:
 		for i in range(file_length):
+			count = 0
 			for subdir in file_contents:
-				for line in [arr[:-1] for arr in file_contents[subdir]]:
-					f.write(line)
+				count += 1
+				f.write(file_contents[subdir][i][:-1])
+				if count < len(file_contents):
+					f.write(',')
 			f.write('\n')

@@ -33,7 +33,7 @@ for pgn_file in os.listdir(PGN_DIR):
 
 	board = game.board()
 	moves = 0
-	with open(DEF_HEATMAP_DIR+"def_heatmap_"+file_name[:-4]+".csv", 'w') as f:
+	with open(DEF_HEATMAP_DIR+"def_heatmaps_"+file_name[:-4]+".csv", 'w') as f:
 		for move in game.main_line():
 			moves += 1
 			heatmap = util.build_def_heatmap(board)
@@ -46,7 +46,7 @@ for pgn_file in os.listdir(PGN_DIR):
 
 	board = game.board()
 	moves = 0
-	with open(OFF_HEATMAP_DIR+"off_heatmap_"+file_name[:-4]+".csv", 'w') as f:
+	with open(OFF_HEATMAP_DIR+"off_heatmaps_"+file_name[:-4]+".csv", 'w') as f:
 		for move in game.main_line():
 			moves += 1
 			heatmap = util.build_off_heatmap(board)
