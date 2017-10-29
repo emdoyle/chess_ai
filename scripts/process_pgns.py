@@ -10,7 +10,8 @@ from chess import pgn
 
 PKG_DIR = '/Users/evanmdoyle/Programming/ChessAI/'
 PGN_DIR = os.fsencode(PKG_DIR+'StockfishMirrorMatches/')
-DATA_DIR = PKG_DIR+'DerivedData/heatmaps/'
+OFF_HEATMAP_DIR = PKG_DIR+'DerivedData/off_heatmaps/'
+DEF_HEATMAP_DIR = PKG_DIR+'DerivedData/def_heatmaps/'
 MATCHES_PATH = PKG_DIR+'StockfishMirrorMatches/'
 SQUARES = chess.SQUARES
 
@@ -19,13 +20,25 @@ for pgn_file in os.listdir(PGN_DIR):
 	game = pgn.read_game(open(MATCHES_PATH+file_name, 'r'))
 	board = game.board()
 	moves = 0
-	with open(DATA_DIR+"heatmap_"+file_name[:-4]+".csv", 'w') as f:
+	with open(DEF_HEATMAP_DIR+"def_heatmap_"+file_name[:-4]+".csv", 'w') as f:
 		for move in game.main_line():
 			moves += 1
-			heatmap = util.build_heatmap(board)
+			heatmap = util.build_def_heatmap(board)
 			for square in heatmap[:-1]:
 				f.write(str(square)+",")
 			f.write(str(heatmap[-1])+"\n")
 			board.push(move)
 
-	print("Should have just written data for " + str(moves) + " moves.")
+	print("Wrote Defensive Heatmap for " + str(moves) + " moves.")
+
+	moves = 0
+	with open(OFF_HEATMAP_DIR+"off_heatmap_"+file_name[:-4]+".csv", 'w') as f:
+		for move in game.main_line():
+			moves += 1
+			heatmap = util.build_off_heatmap(board)
+			for square in heatmap[:-1]:
+				f.write(str(square)+",")
+			f.write(str(heatmap[-1])+"\n")
+			board.push(move)
+
+	print("Wrote Offensive Heatmap for " + str(moves) + " moves.")
