@@ -8,6 +8,15 @@ SUBDIR_PREFIXES = [s[:-1]+"_" for s in DATA_SUBDIRS]
 
 DST_DIR = DATA_DIR + "complete/"
 
+def create_header():
+	string = ""
+	for x in range(64):
+		string += "o_h_"+str(x)+","
+	for y in range(64):
+		string += "d_h_"+str(y)+","
+	string += "label\n"
+	return string
+
 for data_file in os.listdir(os.fsencode(GAME_DIR)):
 	file_name = os.fsdecode(data_file)
 	file_contents = {}
@@ -30,6 +39,7 @@ for data_file in os.listdir(os.fsencode(GAME_DIR)):
 			f.write('\n')
 
 with open(DST_DIR+"full_dataset.csv", 'w') as f:
+	f.write(create_header())
 	for complete_file in os.listdir(os.fsencode(DST_DIR)):
 		file_name = os.fsdecode(complete_file)
 		file_contents = []
