@@ -9,11 +9,25 @@ from chess import pgn, uci
 
 global_id = 0
 
+DRAW = 'draw'
+
 def total_sims_at_depth(node):
-	# TODO
+	sims = node.simulations
+	parent = node.parent
+	for child in parent.children:
+		if child != node:
+			sims += child.simulations
+	return sims
+
 
 def selection_formula(node):
-	# TODO
+	w = node.wins
+	n = node.simulations
+	N = total_sims_at_depth(node)
+	c = math.sqrt(2)
+	term1 = float(w/n)
+	term2 = c*math.sqrt(math.log(N)/n)
+	return term1 + term2
 
 class Node:
 
@@ -25,6 +39,7 @@ class Node:
 		self.color = True
 		self.parent = parent
 		self.children = []
+		self.position = position
 
 	def gen_id(self):
 		global_id += 1
@@ -32,6 +47,14 @@ class Node:
 
 	def id(self):
 		return self.__id
+
+	@property
+	def position(self):
+		return self.__position
+
+	@position.setter
+	def position(self, position):
+		self.__position = position if type(position) == chess.Board else None
 
 	@property
 	def move(self):
@@ -82,7 +105,7 @@ class MCTS:
 
 	def __init__(self, startpos, iterations=50):
 		self.__startpos = startpos if type(startpos) = chess.Board else None
-		self.__root = Node(True)
+		self.__root = Node(True, position=chess.Board())
 		self.iterations = iterations
 
 	@property
@@ -98,7 +121,9 @@ class MCTS:
 			leaf = self.select_leaf(self.__root)
 			leaf = self.expand_tree(leaf)
 			winner = self.playout(leaf)
-			self.backprop(leaf, winner)
+			if (winner == DRAW):
+				winner = 0.5
+			self.backprop(leaf, float(winner))
 
 
 	def select_leaf(self, root):
@@ -118,16 +143,39 @@ class MCTS:
 		return sorted(node_scores.items(), key=operator.itemgetter[1], reverse=True)[0][0]
 
 	def expand_tree(self, leaf):
-		if self.__startpos:
-			board = self.__startpos
+		if leaf.parent.position:
+			board = leaf.parent.position
 			moves = list(board.legal_moves)
 			rnum = randint(0, len(moves))
 			selected_move = moves[rnum]
-			# TODO
+			
+			board.push(selected_move)
+			new_node = Node(not leaf.color, parent=leaf, position=board)
 		else:
 			print("MCTS has invalid start position.")
 
+	def decode(self, result):
+		if result == '1-0':
+			return True
+		elif result == '0-1':
+			return False
+		else:
+			return DRAW
+
 	def playout(self, leaf):
-		# TODO
+		board = leaf.position
+		while not board.is_game_over(claim_draw=True):
+			moves = list(board.legal_moves)
+			rnum = randint(0, len(moves))
+			selected_move = moves[rnum]
+
+			board.push(selected_move)
+
+		return self.decode(board.result(claim_draw=True))
+
 	def backprop(self, leaf, result):
-		# TODO
+		while leaf.parent:
+			leaf.wins += result
+			leaf.simulations += 1
+			leaf = leaf.parent
+
