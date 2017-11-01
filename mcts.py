@@ -35,6 +35,7 @@ class Node:
 
 	def __init__(self, color, parent=None, position=None):
 		self.color = color
+		self.move = None
 		self.wins = 0
 		self.simulations = 0
 		self.color = True
@@ -56,7 +57,7 @@ class Node:
 
 	@move.setter
 	def move(self, move):
-		self.__move 
+		self.__move = move if type(move) == chess.Move else None
 
 	@property
 	def wins(self):
@@ -97,11 +98,19 @@ class Node:
 
 class MCTS:
 
-	def __init__(self, iter_time=10):
-		self.__startpos = chess.Board()
+	def __init__(self, startpos=chess.Board(), iter_time=100):
+		self.startpos = startpos
 		self.__root = Node(True, position=chess.Board())
 		self.iter_time = iter_time
 		self.__states = []
+
+	@property
+	def startpos(self):
+		return self.__startpos
+
+	@startpos.setter
+	def startpos(self, startpos):
+		self.__startpos = startpos if type(startpos) == chess.Board else chess.Board()
 
 	def add_state(self, state):
 		if type(state) == chess.Board:
@@ -113,7 +122,7 @@ class MCTS:
 
 	@iter_time.setter
 	def iter_time(self, time):
-		self.__iter_time = time if time > 0 else 10
+		self.__iter_time = time if time > 0 else 100
 
 	def build(self):
 		begin = datetime.datetime.utcnow()
@@ -155,6 +164,7 @@ class MCTS:
 				new_board = copy.deepcopy(board)
 				new_board.push(selected_move)
 				new_node = Node(not leaf.color, parent=leaf, position=new_board)
+				new_node.move = selected_move
 				leaf.children.append(new_node)
 				new_leaves.append(new_node)
 			return new_leaves
@@ -188,6 +198,13 @@ class MCTS:
 					leaf.wins += 0.5
 				leaf.simulations += 1
 				leaf = leaf.parent
+
+	def best_move(self):
+		node = self.__root
+		child_scores = []
+		for child in node.children:
+			child_scores.append((child.move.uci(), (child.wins/child.simulations)))
+		return sorted(child_scores, key=operator.itemgetter(1), reverse=True)[0][0]
 
 	def recurs_print(self, node, file_handle):
 		string_set = "{ "
