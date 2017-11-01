@@ -1,4 +1,5 @@
 import chess
+import sys
 import math
 import numpy as np
 import argparse
@@ -96,7 +97,7 @@ class Node:
 
 class MCTS:
 
-	def __init__(self, iter_time=2):
+	def __init__(self, iter_time=10):
 		self.__startpos = chess.Board()
 		self.__root = Node(True, position=chess.Board())
 		self.iter_time = iter_time
@@ -112,7 +113,7 @@ class MCTS:
 
 	@iter_time.setter
 	def iter_time(self, time):
-		self.__iter_time = time if time > 0 else 2
+		self.__iter_time = time if time > 0 else 10
 
 	def build(self):
 		begin = datetime.datetime.utcnow()
@@ -133,10 +134,12 @@ class MCTS:
 		node_scores = defaultdict(int)
 		for child in curr_node.children:
 			if not child.children:
-				node_scores[child] = selection_formula(child)
+				if not child.position.is_game_over(claim_draw=True):
+					node_scores[child] = selection_formula(child)
 			else:
 				temp = self.select_leaf(child)
-				node_scores[temp] = selection_formula(temp)
+				if not temp.position.is_game_over(claim_draw=True):
+					node_scores[temp] = selection_formula(temp)
 
 		# 0-index first time to get top score, second time to get node from (node, score)
 		return sorted(node_scores.items(), key=operator.itemgetter(1), reverse=True)[0][0]
@@ -169,7 +172,7 @@ class MCTS:
 			return DRAW
 
 	def playout(self, leaf):
-		board = leaf.position
+		board = copy.deepcopy(leaf.position)
 		while not board.is_game_over(claim_draw=True):
 			moves = list(board.legal_moves)
 			selected_move = choice(moves)
