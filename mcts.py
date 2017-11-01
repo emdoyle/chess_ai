@@ -5,6 +5,7 @@ import argparse
 import datetime
 import operator
 import random
+from random import choice
 import copy
 from chess import pgn, uci
 from collections import defaultdict
@@ -117,9 +118,11 @@ class MCTS:
 		begin = datetime.datetime.utcnow()
 		while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
 			leaf = self.select_leaf(self.__root)
-			leaf = self.expand_tree(leaf)
-			winner = self.playout(leaf)
-			self.backprop(leaf, winner)
+			leaves = self.expand_tree(leaf)
+			winners = []
+			for new_leaf in leaves:
+				winners.append((new_leaf, self.playout(new_leaf)))
+			self.backprop(winners)
 
 
 	def select_leaf(self, root):
@@ -140,20 +143,18 @@ class MCTS:
 
 	def expand_tree(self, leaf):
 		if leaf.position:
+			new_leaves = []
 			board = leaf.position
 			moves = list(board.legal_moves)
 			if len(moves) == 0:
 				print("No moves from position: " + board.fen() + "\n")
-			if len(moves) > 1:
-				rnum = random.randint(0, len(moves)-1)
-				selected_move = moves[rnum]
-			else:
-				selected_move = moves[0]
-			board.push(selected_move)
-			new_board = copy.deepcopy(board)
-			new_node = Node(not leaf.color, parent=leaf, position=new_board)
-			leaf.children.append(new_node)
-			return new_node
+			for selected_move in moves:
+				new_board = copy.deepcopy(board)
+				new_board.push(selected_move)
+				new_node = Node(not leaf.color, parent=leaf, position=new_board)
+				leaf.children.append(new_node)
+				new_leaves.append(new_node)
+			return new_leaves
 		else:
 			print("MCTS has invalid start position.")
 
@@ -171,20 +172,19 @@ class MCTS:
 		board = leaf.position
 		while not board.is_game_over(claim_draw=True):
 			moves = list(board.legal_moves)
-			rnum = random.randint(0, len(moves)-1)
-			selected_move = moves[rnum]
-
+			selected_move = choice(moves)
 			board.push(selected_move)
 		return self.decode(board.result(claim_draw=True))
 
-	def backprop(self, leaf, result):
-		while leaf:
-			if leaf.color == result:
-				leaf.wins += 1
-			elif result == DRAW:
-				leaf.wins += 0.5
-			leaf.simulations += 1
-			leaf = leaf.parent
+	def backprop(self, winners):
+		for leaf, result in winners:
+			while leaf:
+				if leaf.color == result:
+					leaf.wins += 1
+				elif result == DRAW:
+					leaf.wins += 0.5
+				leaf.simulations += 1
+				leaf = leaf.parent
 
 	def recurs_print(self, node, file_handle):
 		string_set = "{ "
