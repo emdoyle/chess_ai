@@ -2,7 +2,7 @@ import chess
 import math
 import numpy as np
 import argparse
-import time
+import datetime
 import operator
 import random
 import copy
@@ -95,27 +95,31 @@ class Node:
 
 class MCTS:
 
-	def __init__(self, iterations=800):
+	def __init__(self, iter_time=2):
 		self.__startpos = chess.Board()
 		self.__root = Node(True, position=chess.Board())
-		self.iterations = iterations
+		self.iter_time = iter_time
+		self.__states = []
+
+	def add_state(self, state):
+		if type(state) == chess.Board:
+			self.__states.append(state)
 
 	@property
-	def iterations(self):
-		return self.__iterations
+	def iter_time(self):
+		return self.__iter_time
 
-	@iterations.setter
-	def iterations(self, iters):
-		self.__iterations = iters if iters > 0 else 1
+	@iter_time.setter
+	def iter_time(self, time):
+		self.__iter_time = time if time > 0 else 2
 
 	def build(self):
-		for i in range(self.iterations):
+		begin = datetime.datetime.utcnow()
+		while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
 			leaf = self.select_leaf(self.__root)
 			leaf = self.expand_tree(leaf)
 			winner = self.playout(leaf)
-			if (winner == DRAW):
-				winner = 0.5
-			self.backprop(leaf, float(winner))
+			self.backprop(leaf, winner)
 
 
 	def select_leaf(self, root):
@@ -138,8 +142,13 @@ class MCTS:
 		if leaf.position:
 			board = leaf.position
 			moves = list(board.legal_moves)
-			rnum = random.randint(0, len(moves)-1)
-			selected_move = moves[rnum]
+			if len(moves) == 0:
+				print("No moves from position: " + board.fen() + "\n")
+			if len(moves) > 1:
+				rnum = random.randint(0, len(moves)-1)
+				selected_move = moves[rnum]
+			else:
+				selected_move = moves[0]
 			board.push(selected_move)
 			new_board = copy.deepcopy(board)
 			new_node = Node(not leaf.color, parent=leaf, position=new_board)
@@ -166,23 +175,32 @@ class MCTS:
 			selected_move = moves[rnum]
 
 			board.push(selected_move)
-
 		return self.decode(board.result(claim_draw=True))
 
 	def backprop(self, leaf, result):
-		while leaf.parent:
-			leaf.wins += result
+		while leaf:
+			if leaf.color == result:
+				leaf.wins += 1
+			elif result == DRAW:
+				leaf.wins += 0.5
 			leaf.simulations += 1
 			leaf = leaf.parent
 
 	def recurs_print(self, node, file_handle):
-		file_handle.write(node.position.fen() + '\nSimulations: ' + str(node.simulations) + ' Wins: ' + str(node.wins) + '\n')
+		string_set = "{ "
+		for child in node.children:
+			string_set += str(id(child)) + " [label=\"sims" + str(child.simulations) + "wins" + str(child.wins) + "\"] "
+		string_set += "}"
+		file_handle.write(str(id(node)) + " [label=\"sims" + str(node.simulations) + "wins" + str(node.wins) + '\"];')
+		file_handle.write(str(id(node)) + ' -> ' + string_set + ';\n')
 		for child in node.children:
 			self.recurs_print(child, file_handle)
 
 
 	def print_tree(self):
 		node = self.__root
-		with open("/Users/evanmdoyle/Programming/ChessAI/MCTS.tree", 'a') as f:
+		with open("/Users/evanmdoyle/Programming/ChessAI/MCTS.dot", 'w') as f:
+			f.write("digraph G { \n")
 			self.recurs_print(node, f)
+			f.write("}\n")
 
