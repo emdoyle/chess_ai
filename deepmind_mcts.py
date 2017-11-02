@@ -6,8 +6,9 @@ import argparse
 import datetime
 import operator
 import random
-from random import choice
 import copy
+# import network
+from random import choice
 from chess import pgn, uci
 from collections import defaultdict
 
@@ -103,11 +104,29 @@ class Node:
 class MCTS:
 
 	TEMPERATURE = True
+	ITERATIONS_PER_BUILD = 1600
 
-	def __init__(self, startpos=chess.Board(), iter_time=100):
+	def __init__(self, startpos=chess.Board(), iterations=100, prev_mcts=None):
 		self.startpos = startpos
-		self.__root = Node(True, position=chess.Board())
-		self.iter_time = iter_time
+		if prev_mcts:
+			# This saves the statistics about this startpos from the prev_mcts
+			self.__root = prev_mcts.child_matching(self.startpos)
+			if not self.__root:
+				print("Could not find move in previous tree.")
+				self.__root = Node(True, position=chess.Board())
+		else:
+			self.__root = Node(True, position=chess.Board())
+		self.iterations = iterations
+		# self.iter_time = iter_time
+
+	def child_matching(self, position):
+		if not self.__root.children:
+			return None
+
+		for child, edge in self._root.children:
+			if child.position == position:
+				return child
+		return None
 
 	def max_action_val_child(root):
 		max_val = 0
@@ -134,6 +153,14 @@ class MCTS:
 		return visits
 
 	@property
+	def iterations(self):
+		return self.__iterations
+
+	@iterations.setter
+	def iterations(self, iters):
+		self.__iterations = max(0, min(iters, 3200))
+
+	@property
 	def startpos(self):
 		return self.__startpos
 
@@ -141,17 +168,18 @@ class MCTS:
 	def startpos(self, startpos):
 		self.__startpos = startpos if type(startpos) == chess.Board else chess.Board()
 
-	@property
-	def iter_time(self):
-		return self.__iter_time
+	# @property
+	# def iter_time(self):
+	# 	return self.__iter_time
 
-	@iter_time.setter
-	def iter_time(self, time):
-		self.__iter_time = time if time > 0 else 100
+	# @iter_time.setter
+	# def iter_time(self, time):
+	# 	self.__iter_time = time if time > 0 else 100
 
 	def build(self):
-		begin = datetime.datetime.utcnow()
-		while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
+		# begin = datetime.datetime.utcnow()
+		# while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
+		for iteration in range(ITERATIONS_PER_BUILD):
 			leaf = self.select_leaf(self.__root)
 			self.expand_tree(leaf)
 			self.backprop(leaf, NN.value(leaf.position))
@@ -192,31 +220,11 @@ class MCTS:
 			leaf = leaf.parent
 
 	def best_move(self):
-		# TODO totally different algorithm to pick a move
-		node = self.__root
-		child_scores = []
-		for child, edge in node.children:
-			# TODO fix this to use edges
-			child_scores.append((child.move.uci(), (child.wins/child.simulations)))
-		return sorted(child_scores, key=operator.itemgetter(1), reverse=True)[0][0]
-
-	def recurs_print(self, node, file_handle):
-		# Fully broken, need to fix DOT to label edges and use them to traverse here
-		string_set = "{ "
-		for child, edge in node.children:
-			string_set += str(id(child)) + " [label=\"sims" + str(child.simulations) + "wins" + str(child.wins) + "color" + str(child.color) + "\"] "
-		string_set += "}"
-		file_handle.write(str(id(node)) + " [label=\"sims" + str(node.simulations) + "wins" + str(node.wins) + "color" + str(node.color) + '\"];')
-		file_handle.write(str(id(node)) + ' -> ' + string_set + ';\n')
-		for child, edge in node.children:
-			self.recurs_print(child, file_handle)
-
-
-	def print_tree(self):
-		# Fully broken, see recurs_print
-		node = self.__root
-		with open("/Users/evanmdoyle/Programming/ChessAI/MCTS.dot", 'w') as f:
-			f.write("digraph G { \n")
-			self.recurs_print(node, f)
-			f.write("}\n")
-
+		if TEMPERATURE:
+			choices = []
+			for child, edge in self.__root.children:
+				choices += [child]*edge.simulations
+			# This does a weighted random selection based on simulations
+			return random.choice(choices)
+		else:
+			return most_visited_child(self.__root)
