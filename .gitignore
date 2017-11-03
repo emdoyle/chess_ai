@@ -108,3 +108,6 @@ serving/
 WORKSPACE
 Export/
 Model/
+
+# Use later, maybe in another repo?
+hide/
