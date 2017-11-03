@@ -106,4 +106,5 @@ ENV/
 # Tensorflow Serving
 serving/
 WORKSPACE
-
+Export/
+Model/
