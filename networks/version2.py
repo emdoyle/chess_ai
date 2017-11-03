@@ -24,6 +24,7 @@ class Network:
 
 	DATA_FILE = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
 	PIECE_PREFIXES = ['p_', 'n_', 'b_', 'r_', 'q_', 'k_']
+	RESIDUAL_BLOCKS = 10
 
 	def __init__(self):
 		self.__nn = tf.estimator.Estimator(model_fn=self.model_fn, params={})
@@ -85,8 +86,9 @@ class Network:
 		policy_labels = dataset.probs.apply(lambda x: self.create_policy(self.decode(x)))
 		policy_labels = policy_labels.apply(pd.Series)
 
-		value_labels = dataset.value.apply(lambda x: self.one_hot(x))
-		value_labels = value_labels.apply(pd.Series)
+		# value_labels = dataset.value.apply(lambda x: self.one_hot(x))
+		# value_labels = value_labels.apply(pd.Series)
+		value_labels = dataset.value
 
 		dataset.pop('probs')
 		dataset.pop('value')
@@ -99,15 +101,79 @@ class Network:
 			shuffle=shuffle,
 			num_threads=num_threads)
 
+	def custom_conv(self, input_layer, f_height, f_width, in_channels, out_channels, stride=[1,1,1,1], name="conv"):
+		with tf.variable_scope(name) as scope:
+			# need a filter/kernel with size 3x3, 256 output channels
+			kernel = tf.get_variable(
+				name+"_filter",
+				[f_height,f_width,in_channels,out_channels],
+				initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
+				)
+
+			# now need input in format [30,8,8,12]
+			board_image = tf.reshape(input_layer, [-1,8,8,12])
+
+			# convolution!
+			conv1 = tf.nn.conv2d(input_layer, kernel, stride, padding='SAME', name=scope.name)
+			biases1 = tf.get_variable(name+"_biases", [out_channels], initializer=tf.constant_initializer(0.0))
+			pre_activation = tf.nn.bias_add(conv1, biases1)
+
+			return pre_activation
+
+	def custom_batch_norm(self, inputs, training=True, name="norm"):
+		with tf.variable_scope(name) as scope:
+			norm1 = tf.layers.batch_normalization(inputs=inputs, training=True, name=scope.name)
+		return norm1
+
+	def custom_relu(self, inputs, name="relu"):
+		with tf.variable_scope(name) as scope:
+			relu = tf.nn.relu(inputs, name=scope.name)
+		return relu
+
 	def model_fn(self, features, labels, mode, params):
 		# Labels need to be split into policy and value
-		policy_labels, value_labels = tf.split(labels, [4096, 2], axis=1)
+		policy_labels, value_labels = tf.split(labels, [4096, 1], axis=1)
 
 		# Input layer comes from features, which come from input_fn
 		input_layer = tf.cast(features["x"], tf.float32)
-		hidden_layer = tf.layers.dense(inputs=input_layer, units=4097, activation=None)
-		policy_output_layer = tf.layers.dense(inputs=hidden_layer, units=4096, activation=None)
-		value_output_layer = tf.layers.dense(inputs=hidden_layer, units=2, activation=None)
+		board_image = tf.reshape(input_layer, [-1,8,8,12])
+
+		pre_activation = self.custom_conv(board_image, 3, 3, 12, 256, name="conv1")
+
+		norm1 = self.custom_batch_norm(pre_activation, name="norm1")
+
+		relu1 = self.custom_relu(norm1, name="relu1")
+		# TODO: Add summaries for Tensorboard here
+
+		curr_input = relu1
+		for i in range(self.RESIDUAL_BLOCKS):
+			id_str = str(2+i)
+			conv_layer = self.custom_conv(curr_input, 3, 3, 256, 256, name="conv"+id_str)
+			norm_layer = self.custom_batch_norm(conv_layer, name="norm"+id_str)
+			relu_layer = self.custom_relu(norm_layer, name="relu"+id_str)
+			conv_layer_2 = self.custom_conv(relu_layer, 3, 3, 256, 256, name="2conv"+id_str)
+			norm_layer_2 = self.custom_batch_norm(conv_layer_2, name="2norm"+id_str)
+			residual_layer = tf.add(curr_input, norm_layer_2)
+			relu_layer_2 = self.custom_relu(residual_layer, name="2relu"+id_str)
+			curr_input = relu_layer_2
+
+		residual_tower_out = curr_input
+
+		policy_conv = self.custom_conv(residual_tower_out, 1, 1, 256, 2, name="policy_conv")
+		policy_norm = self.custom_batch_norm(policy_conv, name="policy_norm")
+		policy_relu = self.custom_relu(policy_norm, name="policy_relu")
+		# policy_relu should have shape [batch, 8, 8, 2] so I want [batch, 128]
+		policy_relu = tf.reshape(policy_relu, [-1,128])
+		policy_output_layer = tf.layers.dense(inputs=policy_relu, units=4096, activation=None)
+
+		value_conv = self.custom_conv(residual_tower_out, 1, 1, 256, 1, name="value_conv")
+		value_norm = self.custom_batch_norm(value_conv, name="value_norm")
+		value_relu = self.custom_relu(value_norm, name="value_relu")
+		# policy_relu should have shape [batch, 8, 8, 1] so I want [batch, 64]
+		value_relu = tf.reshape(value_relu, [-1, 64])
+		value_hidden = tf.layers.dense(inputs=value_relu, units=256, activation=tf.nn.relu)
+		value_output_layer = tf.layers.dense(inputs=value_hidden, units=1, activation=tf.nn.tanh)
+
 		predictions = tf.concat([policy_output_layer, value_output_layer], axis=1)
 		loss = tf.add(
 			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels)),
@@ -118,6 +184,5 @@ class Network:
 			learning_rate=0.1)
 		train_op = optimizer.minimize(
 			loss=loss, global_step=tf.train.get_global_step())
-		# labels = create_policy(decode(labels))
 		
 		return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops)
