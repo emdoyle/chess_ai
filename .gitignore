@@ -102,3 +102,8 @@ ENV/
 
 # GIFs
 *.gif
+
+# Tensorflow Serving
+serving/
+WORKSPACE
+

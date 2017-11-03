@@ -10,6 +10,8 @@ def feature_col_names():
 				# Column naming convention is [color][piece prefix][square number]
 				# ex: the column labeled 0p_25 holds a 1 when a black pawn occupies position 25
 				feature_columns.append(str(i)+prefix+str(x))
+	for x in range(64):
+		feature_columns.append('turn'+str(x))
 	return feature_columns
 
 def target_column_names():

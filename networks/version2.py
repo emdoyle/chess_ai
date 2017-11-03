@@ -23,12 +23,21 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 class Network:
 
 	DATA_FILE = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
+	MODEL_DIR = "/Users/evanmdoyle/Programming/ChessAI/Model/"
+	EXPORT_DIR = "/Users/evanmdoyle/Programming/ChessAI/Export/"
 	PIECE_PREFIXES = ['p_', 'n_', 'b_', 'r_', 'q_', 'k_']
-	RESIDUAL_BLOCKS = 10
+	RESIDUAL_BLOCKS = 19
 
 	def __init__(self):
-		self.__nn = tf.estimator.Estimator(model_fn=self.model_fn, params={})
-		self.__nn.train(input_fn=self.input_fn(self.DATA_FILE, num_epochs=None, shuffle=True), steps=1)
+		self.__nn = tf.estimator.Estimator(model_dir=self.MODEL_DIR,model_fn=self.model_fn, params={})
+
+	def export(self):
+		serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn(
+			features={'x': tf.placeholder(tf.float32, shape=[8*8*13])})
+		self.__nn.export_savedmodel(self.EXPORT_DIR, serving_input_receiver_fn)
+
+	def train(self, epochs=None, shuffle=True, steps=1):
+		self.__nn.train(input_fn=self.input_fn(self.DATA_FILE, num_epochs=epochs, shuffle=shuffle), steps=steps)
 
 	def feature_col_names(self):
 		# 8x8 board for each piece type (6) for each player (2) plus an indicator of whose turn it is
@@ -39,6 +48,8 @@ class Network:
 					# Column naming convention is [color][piece prefix][square number]
 					# ex: the column labeled 0p_25 holds a 1 when a black pawn occupies position 25
 					feature_columns.append(str(i)+prefix+str(x))
+		for x in range(64):
+			feature_columns.append('turn'+str(x))
 		return feature_columns
 
 	def target_column_names(self):
@@ -69,6 +80,17 @@ class Network:
 			return np.array([0, 1])
 		else:
 			return np.array([1, 0])
+
+	# def single_input_fn(self, position):
+	# 	print(np.array(util.expand_position(position)))
+	# 	print(np.array([0]))
+	# 	return tf.estimator.inputs.numpy_input_fn(
+	# 		x={"x": np.array([util.expand_position(position)])},
+	# 		y=np.array([[0]]),
+	# 		batch_size=1,
+	# 		num_epochs=None,
+	# 		shuffle=False,
+	# 		num_threads=1)
 
 	def input_fn(self, data_file, num_epochs, batch_size=30, shuffle=False, num_threads=4):
 		feature_cols = self.feature_col_names()
@@ -110,9 +132,6 @@ class Network:
 				initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
 				)
 
-			# now need input in format [30,8,8,12]
-			board_image = tf.reshape(input_layer, [-1,8,8,12])
-
 			# convolution!
 			conv1 = tf.nn.conv2d(input_layer, kernel, stride, padding='SAME', name=scope.name)
 			biases1 = tf.get_variable(name+"_biases", [out_channels], initializer=tf.constant_initializer(0.0))
@@ -132,13 +151,14 @@ class Network:
 
 	def model_fn(self, features, labels, mode, params):
 		# Labels need to be split into policy and value
-		policy_labels, value_labels = tf.split(labels, [4096, 1], axis=1)
+		if mode != tf.estimator.ModeKeys.PREDICT:
+			policy_labels, value_labels = tf.split(labels, [4096, 1], axis=1)
 
 		# Input layer comes from features, which come from input_fn
 		input_layer = tf.cast(features["x"], tf.float32)
-		board_image = tf.reshape(input_layer, [-1,8,8,12])
+		board_image = tf.reshape(input_layer, [-1,8,8,13])
 
-		pre_activation = self.custom_conv(board_image, 3, 3, 12, 256, name="conv1")
+		pre_activation = self.custom_conv(board_image, 3, 3, 13, 256, name="conv1")
 
 		norm1 = self.custom_batch_norm(pre_activation, name="norm1")
 
@@ -175,6 +195,14 @@ class Network:
 		value_output_layer = tf.layers.dense(inputs=value_hidden, units=1, activation=tf.nn.tanh)
 
 		predictions = tf.concat([policy_output_layer, value_output_layer], axis=1)
+		if mode == tf.estimator.ModeKeys.PREDICT:
+			return tf.estimator.EstimatorSpec(
+				mode=mode,
+				predictions=predictions,
+				export_outputs={"policy": tf.estimator.export.PredictOutput({"policy": policy_output_layer}),
+					tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({"value": value_output_layer})}
+				)
+
 		loss = tf.add(
 			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels)),
 			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=value_output_layer, labels=value_labels))
@@ -184,5 +212,7 @@ class Network:
 			learning_rate=0.1)
 		train_op = optimizer.minimize(
 			loss=loss, global_step=tf.train.get_global_step())
-		
-		return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops)
+
+		return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops,
+			export_outputs={"policy": tf.estimator.export.PredictOutput({"policy": policy_output_layer}),
+					tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({"value": value_output_layer})})
