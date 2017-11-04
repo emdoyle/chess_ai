@@ -1,37 +1,27 @@
-## Welcome to GitHub Pages
+# AlphaChess Zero
+### Re-Implementing AlphaGo Zero for Chess
 
-You can use the [editor on GitHub](https://github.com/emdoyle/chess_ai/edit/master/docs/README.md) to maintain and preview the content for your website in Markdown files.
+[This paper](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ) details the methods used in creating the world champion Go AI 
+"AlphaGo Zero".  AGZ uses exclusively self-play reinforcement learning (not
+requiring any existing games to learn from) by cleverly combining a guided 
+Monte Carlo Tree Search with a Deep Convolutional Neural Network.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+The key components of AlphaGo Zero are arranged in a 3 stage pipeline, with
+each component feeding into the next.  These components are:
 
-### Markdown
+1. Self-Play Data Generation
+2. Neural Network Training
+3. Player Evaluation
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+First, the best performing Neural Network seen so far powers an MCTS player
+which plays itself thousands of times and generates training data.  Then,
+the current NN is trained on the data using the statistics of the MCTS as ground
+truth labels.  This new iteration of the NN plays against the current best NN.
+After playing 400 matches, if the new NN wins over 55% of the matches, it will
+become the new best player and will be used for future self-play data generation.
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/emdoyle/chess_ai/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+I am using the paper's explanation to guide me in re-implementing this approach
+for Chess instead of Go.  While if one had access to the code of AlphaGo Zero my
+modifications would be easy to implement, my goal in recreating the entire pipeline
+is to become familiar with the process of constructing a production-grade machine-learning
+algorithm.
