@@ -33,3 +33,12 @@ with open(DST_FILE, 'w') as f:
 			if name != 'value':
 				f.write(',')
 		f.write("\n")
+
+
+def write_header():
+	with open(DST_FILE, 'w') as f:
+		for name in (feature_col_names() + target_column_names()):
+			f.write(name)
+			if name != 'value':
+				f.write(',')
+		f.write("\n")

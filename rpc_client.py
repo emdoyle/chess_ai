@@ -8,7 +8,6 @@ from grpc import RpcError
 from grpc.beta import implementations
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class PredictClient():
 

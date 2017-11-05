@@ -1,5 +1,8 @@
 import chess
 import numpy as np
+from os import listdir
+
+EXPORT_DIR = "/Users/evanmdoyle/Programming/ChessAI/Export/"
 
 def decode_symbol(symbol):
 	symbols = ['p', 'n', 'b', 'r', 'q', 'k',
@@ -49,4 +52,8 @@ def expand_position(position):
 		expanded[(12*64):] = [1]*64
 
 	return expanded
+
+def latest_version():
+	versions = listdir(EXPORT_DIR)
+	return sorted(versions, reverse=True)[0]
 

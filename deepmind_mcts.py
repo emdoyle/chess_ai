@@ -1,5 +1,8 @@
-import chess
+# I absolutely hate this sys path stuff
 import sys
+sys.path.append(sys.path[0] + "/..")
+
+import chess
 import math
 import numpy as np
 import argparse
@@ -7,16 +10,23 @@ import datetime
 import operator
 import random
 import copy
-# import network
+import pychess_utils as util
+
 from random import choice
 from chess import pgn, uci
 from collections import defaultdict
+from rpc_client import PredictClient
 
 DRAW = 'draw'
 # This constant should change exploration tendencies
 CPUCT = 1.5
 
-# NN = network.load()
+# gRPC client to query the trained model at localhost:9000
+# SERVER MUST BE RUNNING LOCALLY
+client = PredictClient('127.0.0.1', 9000, 'default', int(util.latest_version()))
+
+prediction_cache = {}
+value_cache = {}
 
 class Edge:
 
@@ -53,7 +63,7 @@ class Edge:
 		self.__simulations = sims if sims >=0 else 0
 
 	def get_siblings(self):
-		return [y for x, y in self.node.parent.children if y != self]
+		return [y for x, y in self.node.children if y != self]
 
 	def total_sims_at_depth(self):
 		sims = self.simulations
@@ -63,7 +73,7 @@ class Edge:
 
 	def get_confidence(self):
 		term1 = CPUCT*self.prob
-		term2 = math.sqrt(self.total_sims_at_depth)/(1 + self.simulations)
+		term2 = math.sqrt(self.total_sims_at_depth())/(1 + self.simulations)
 		return term1*term2
 
 
@@ -104,9 +114,9 @@ class Node:
 class MCTS:
 
 	TEMPERATURE = True
-	ITERATIONS_PER_BUILD = 1600
+	ITERATIONS_PER_BUILD = 100
 
-	def __init__(self, startpos=chess.Board(), iterations=100, prev_mcts=None):
+	def __init__(self, startpos=chess.Board(), iterations=None, prev_mcts=None):
 		self.startpos = startpos
 		if prev_mcts:
 			# This saves the statistics about this startpos from the prev_mcts
@@ -116,37 +126,40 @@ class MCTS:
 				self.__root = Node(True, position=chess.Board())
 		else:
 			self.__root = Node(True, position=chess.Board())
-		self.iterations = iterations
+		if not iterations:
+			self.iterations = self.ITERATIONS_PER_BUILD
+		else:
+			self.iterations = iterations
 		# self.iter_time = iter_time
 
 	def child_matching(self, position):
 		if not self.__root.children:
 			return None
 
-		for child, edge in self._root.children:
+		for child, edge in self.__root.children:
 			if child.position == position:
 				return child
 		return None
 
-	def max_action_val_child(root):
-		max_val = 0
+	def max_action_val_child(self, root):
+		max_val = -1*float("inf")
 		max_child = None
 		max_edge = None
 		for child, edge in root.children:
-			if edge.action_value + edge.get_confidence() > max_val:
+			if edge.action_value + edge.get_confidence() >= max_val:
 				max_child = child
 				max_edge = edge
 		return (max_child, max_edge)
 
-	def most_visited_child(root):
+	def most_visited_child(self, root):
 		max_visits = 0
-		max_child = None
+		max_edge = None
 		for child, edge in root.children:
-			if edge.simulations > max_visits:
-				max_child = child
-		return max_child
+			if edge.simulations >= max_visits:
+				max_edge = edge
+		return max_edge
 
-	def total_child_visits(root):
+	def total_child_visits(self, root):
 		visits = 0
 		for child, edge in root.children:
 			visits += edge.simulations
@@ -179,32 +192,42 @@ class MCTS:
 	def build(self):
 		# begin = datetime.datetime.utcnow()
 		# while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
-		for iteration in range(ITERATIONS_PER_BUILD):
+		for iteration in range(self.iterations):
 			leaf = self.select_leaf(self.__root)
 			self.expand_tree(leaf)
-			self.backprop(leaf, NN.value(leaf.position))
+			if not value_cache.get(leaf.position.fen()):
+				print("Value Cache Miss")
+				value_cache[leaf.position.fen()] = client.predict(util.expand_position(leaf.position))[0]
+			else:
+				print("Value Cache Hit")
+			self.backprop(leaf, value_cache[leaf.position.fen()])
 
 	def select_leaf(self, root):
 		if not root.children:
 			return root
 		else:
-			return select_leaf(max_action_val_child(root)[0])
+			return self.select_leaf(self.max_action_val_child(root)[0])
 
 	def expand_tree(self, leaf):
 		if leaf.position:
 			new_leaves = []
 			board = leaf.position
-			priors = NN.policy(board)
+			if not prediction_cache.get(board.fen()):
+				print("Policy Cache Miss")
+				prediction_cache[board.fen()] = client.predict(util.expand_position(board), 'policy')
+			else:
+				print("Policy Cache Hit")
 			moves = list(board.legal_moves)
 			if len(moves) == 0:
 				print("No moves from position: " + board.fen() + "\n")
 			for selected_move in moves:
 				new_board = copy.deepcopy(board)
 				# Make sure you can index into priors with a UCI move
-				new_edge = Edge(leaf, selected_move, priors[selected_move.uci()])
+				# TODO: reuse index calculation based on from, to square
+				new_edge = Edge(leaf, selected_move, prediction_cache[board.fen()][(selected_move.from_square*64)+selected_move.to_square])
 				new_board.push(selected_move)
 				new_node = Node(not leaf.color, parent=leaf, position=new_board)
-				leaf.children.append((leaf, new_edge))
+				leaf.children.append((new_node, new_edge))
 				new_leaves.append(new_node)
 			return new_leaves
 		else:
@@ -213,18 +236,26 @@ class MCTS:
 	def backprop(self, leaf, value):
 		leaf = leaf.parent
 		while leaf:
-			path_edge = max_action_val_child(leaf)[1]
+			path_edge = self.max_action_val_child(leaf)[1]
 			path_edge.simulations += 1
 			path_edge.total_action_value += value
 			path_edge.action_value = path_edge.total_action_value/path_edge.simulations
 			leaf = leaf.parent
 
+	def get_policy_string(self):
+		policy = []
+		total_vists = self.total_child_visits(self.__root)
+		for child, edge in self.__root.children:
+			prob = edge.simulations/total_vists
+			policy.append("("+str(edge.move.from_square)+str(edge.move.to_square)+":"+str(prob)+")")
+		return '-'.join(policy)
+
 	def best_move(self):
-		if TEMPERATURE:
+		if self.TEMPERATURE:
 			choices = []
 			for child, edge in self.__root.children:
-				choices += [child]*edge.simulations
+				choices += [edge.move]*edge.simulations
 			# This does a weighted random selection based on simulations
 			return random.choice(choices)
 		else:
-			return most_visited_child(self.__root)
+			return most_visited_child(self.__root).move
