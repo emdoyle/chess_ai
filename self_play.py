@@ -14,7 +14,8 @@ from deepmind_mcts import MCTS
 
 PGN_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/pgn/"
 DATA_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
-GAME_BATCH_SIZE = 1
+GAME_BATCH_SIZE = 3
+CLAIM_DRAW = True
 ENGINE_NAME = "ACZ"
 EXPORTER = chess.pgn.StringExporter(headers=True, variations=True, comments=True)
 
@@ -28,15 +29,15 @@ def decode_result(result, turn):
 	return None
 
 def extract_csv_string(arr):
-	features = ','.join(map(str, arr))
+	return ','.join(map(str, arr))
 
 def write_board_data(boards, mcts_policy_strings, result):
 	with open(DATA_DIR, "a") as f:
 		if len(boards) != len(mcts_policy_strings):
 			print("Recorded different number of boards and policies.")
 		for i in range(len(boards)):
-			if board.turn:
-				curr_result = decode_result(result, board.turn)
+			board = boards[i]
+			curr_result = decode_result(result, board.turn)
 			board = util.expand_position(boards[i])
 			policy = mcts_policy_strings[i]
 			f.write(extract_csv_string(board+[policy]+[curr_result]))
@@ -56,6 +57,15 @@ def play_game():
 
 	boards = []
 	mcts_policy_strings = []
+	move_count = 0
+	next_temp = True
+
+	# This works because the game is implemented as a tree of moves and it
+	# isn't fully hidden.  I assume add_variation() creates an edge to a new node and
+	# returns it  while updating a value on the source node. 
+	# Thus, 'game' still refers to the root GameNode while 'node' refers to the deepest
+	# or final node in the tree. TODO: Check source code
+	node = game
 
 	while not board.is_game_over(claim_draw=True):
 		# Build new tree
@@ -65,10 +75,15 @@ def play_game():
 		move = mcts.best_move()
 		# Execute the move selected by MCTS
 		board.push(move)
+		move_count += 1
+		# Stop exploring so much after 15 moves
+		if move_count == 15:
+			next_temp = False
+		print("Move " + str(move_count) + ": " + move.uci())
 		print(board)
-		game.add_variation(move)
+		node = node.add_variation(move)
 		# Salvage existing statistics about the position
-		mcts = MCTS(startpos=board, prev_mcts=mcts)
+		mcts = MCTS(startpos=board, prev_mcts=mcts, temperature=next_temp)
 
 	result = board.result(claim_draw=CLAIM_DRAW)
 	write_board_data(boards, mcts_policy_strings, result)

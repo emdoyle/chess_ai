@@ -25,6 +25,8 @@ CPUCT = 1.5
 # SERVER MUST BE RUNNING LOCALLY
 client = PredictClient('127.0.0.1', 9000, 'default', int(util.latest_version()))
 
+# These caches don't kick in until second game but are vital to performance at that point
+# This delay is because initially all selected leaves are compulsory misses :(
 prediction_cache = {}
 value_cache = {}
 
@@ -113,10 +115,12 @@ class Node:
 
 class MCTS:
 
-	TEMPERATURE = True
+	# 1600 Iterations is simply too intense for this machine...
+	# Need to look into splitting into threads, queuing requests and cloud resources
 	ITERATIONS_PER_BUILD = 100
+	ITER_TIME = 15
 
-	def __init__(self, startpos=chess.Board(), iterations=None, prev_mcts=None):
+	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None, prev_mcts=None, temperature=True):
 		self.startpos = startpos
 		if prev_mcts:
 			# This saves the statistics about this startpos from the prev_mcts
@@ -126,11 +130,11 @@ class MCTS:
 				self.__root = Node(True, position=chess.Board())
 		else:
 			self.__root = Node(True, position=chess.Board())
-		if not iterations:
-			self.iterations = self.ITERATIONS_PER_BUILD
-		else:
-			self.iterations = iterations
-		# self.iter_time = iter_time
+
+		self.iterations = iterations if iterations else self.ITERATIONS_PER_BUILD
+		self.iter_time = iter_time if iter_time else self.ITER_TIME
+
+		self.temperature = temperature
 
 	def child_matching(self, position):
 		if not self.__root.children:
@@ -149,6 +153,7 @@ class MCTS:
 			if edge.action_value + edge.get_confidence() >= max_val:
 				max_child = child
 				max_edge = edge
+				max_val = edge.action_value + edge.get_confidence()
 		return (max_child, max_edge)
 
 	def most_visited_child(self, root):
@@ -181,50 +186,52 @@ class MCTS:
 	def startpos(self, startpos):
 		self.__startpos = startpos if type(startpos) == chess.Board else chess.Board()
 
-	# @property
-	# def iter_time(self):
-	# 	return self.__iter_time
+	@property
+	def iter_time(self):
+		return self.__iter_time
 
-	# @iter_time.setter
-	# def iter_time(self, time):
-	# 	self.__iter_time = time if time > 0 else 100
+	@iter_time.setter
+	def iter_time(self, time):
+		self.__iter_time = time if time > 0 else 100
 
-	def build(self):
-		# begin = datetime.datetime.utcnow()
-		# while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
-		for iteration in range(self.iterations):
-			leaf = self.select_leaf(self.__root)
-			self.expand_tree(leaf)
-			if not value_cache.get(leaf.position.fen()):
-				print("Value Cache Miss")
-				value_cache[leaf.position.fen()] = client.predict(util.expand_position(leaf.position))[0]
-			else:
-				print("Value Cache Hit")
-			self.backprop(leaf, value_cache[leaf.position.fen()])
+	def search(self):
+		leaf = self.select_leaf(self.__root)
+		self.expand_tree(leaf)
+		if not value_cache.get(leaf.position.fen()):
+			value_cache[leaf.position.fen()] = client.predict(util.expand_position(leaf.position))[0]
+		self.backprop(leaf, value_cache[leaf.position.fen()])
+
+	def build(self, timed=False):
+		if timed == True:
+			begin = datetime.datetime.utcnow()
+			while datetime.datetime.utcnow() - begin < datetime.timedelta(seconds=self.iter_time):
+				self.search()
+		else:
+			for iteration in range(self.iterations):
+				self.search()
 
 	def select_leaf(self, root):
-		if not root.children:
-			return root
-		else:
-			return self.select_leaf(self.max_action_val_child(root)[0])
+		while root:
+			if not root.children:
+				return root
+			root = self.max_action_val_child(root)[0]
+		print("Shouldn't hit this point.")
+		return Node(True)
 
 	def expand_tree(self, leaf):
 		if leaf.position:
 			new_leaves = []
 			board = leaf.position
 			if not prediction_cache.get(board.fen()):
-				print("Policy Cache Miss")
 				prediction_cache[board.fen()] = client.predict(util.expand_position(board), 'policy')
-			else:
-				print("Policy Cache Hit")
 			moves = list(board.legal_moves)
 			if len(moves) == 0:
 				print("No moves from position: " + board.fen() + "\n")
 			for selected_move in moves:
 				new_board = copy.deepcopy(board)
-				# Make sure you can index into priors with a UCI move
-				# TODO: reuse index calculation based on from, to square
-				new_edge = Edge(leaf, selected_move, prediction_cache[board.fen()][(selected_move.from_square*64)+selected_move.to_square])
+				new_edge = Edge(leaf, selected_move,
+						util.logit_to_prob(prediction_cache[board.fen()][(selected_move.from_square*64)+selected_move.to_square])
+						)
 				new_board.push(selected_move)
 				new_node = Node(not leaf.color, parent=leaf, position=new_board)
 				leaf.children.append((new_node, new_edge))
@@ -247,15 +254,22 @@ class MCTS:
 		total_vists = self.total_child_visits(self.__root)
 		for child, edge in self.__root.children:
 			prob = edge.simulations/total_vists
-			policy.append("("+str(edge.move.from_square)+str(edge.move.to_square)+":"+str(prob)+")")
+			if prob == 1:
+				policy.append("("+str(edge.move.from_square)+str(edge.move.to_square)+":"+str(1000)+")")
+			else:
+				policy.append("("+str(edge.move.from_square)+str(edge.move.to_square)+":"+str(util.prob_to_logit(prob))+")")
 		return '-'.join(policy)
 
 	def best_move(self):
-		if self.TEMPERATURE:
+		if self.temperature:
 			choices = []
+			chances = defaultdict(int)
 			for child, edge in self.__root.children:
 				choices += [edge.move]*edge.simulations
+				chances[edge.move.uci()] = edge.simulations
 			# This does a weighted random selection based on simulations
-			return random.choice(choices)
+			choice = random.choice(choices)
+			print(choice.uci() + " was chosen with chance: " + str(chances[choice.uci()]/len(choices)) + " out of " + str(len(self.__root.children)) + " options.")
+			return choice
 		else:
-			return most_visited_child(self.__root).move
+			return self.most_visited_child(self.__root).move

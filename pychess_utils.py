@@ -1,4 +1,5 @@
 import chess
+import math
 import numpy as np
 from os import listdir
 
@@ -57,3 +58,11 @@ def latest_version():
 	versions = listdir(EXPORT_DIR)
 	return sorted(versions, reverse=True)[0]
 
+def logit_to_prob(logit):
+	# logit is log(p/(1-p))
+	# so logit to prob is (e^logit)/(1+(e^logit))
+	return math.exp(logit)/(1+math.exp(logit))
+
+def prob_to_logit(prob):
+	# log(p/(1-p))
+	return math.log(prob/(1-prob))
