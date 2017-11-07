@@ -21,10 +21,6 @@ DRAW = 'draw'
 # This constant should change exploration tendencies
 CPUCT = 1.5
 
-# gRPC client to query the trained model at localhost:9000
-# SERVER MUST BE RUNNING LOCALLY
-client = PredictClient('127.0.0.1', 9000, 'default', int(util.latest_version()))
-
 # These caches don't kick in until second game but are vital to performance at that point
 # This delay is because initially all selected leaves are compulsory misses :(
 prediction_cache = {}
@@ -120,7 +116,13 @@ class MCTS:
 	ITERATIONS_PER_BUILD = 100
 	ITER_TIME = 15
 
-	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None, prev_mcts=None, temperature=True):
+	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None,
+		prev_mcts=None, temperature=True, version=util.latest_version()):
+		self.version = version
+		# gRPC client to query the trained model at localhost:9000
+		# SERVER MUST BE RUNNING LOCALLY
+		self.__client = PredictClient('127.0.0.1', 9000, 'default', int(self.version))
+
 		self.startpos = startpos
 		if prev_mcts:
 			# This saves the statistics about this startpos from the prev_mcts
@@ -198,7 +200,11 @@ class MCTS:
 		leaf = self.select_leaf(self.__root)
 		self.expand_tree(leaf)
 		if not value_cache.get(leaf.position.fen()):
-			value_cache[leaf.position.fen()] = client.predict(util.expand_position(leaf.position))[0]
+			try:
+				value_cache[leaf.position.fen()] = self.__client.predict(util.expand_position(leaf.position))[0]
+			except:
+				print("Prediction error, retrying...")
+				value_cache[leaf.position.fen()] = self.__client.predict(util.expand_position(leaf.position))[0]
 		self.backprop(leaf, value_cache[leaf.position.fen()])
 
 	def build(self, timed=False):
@@ -223,7 +229,11 @@ class MCTS:
 			new_leaves = []
 			board = leaf.position
 			if not prediction_cache.get(board.fen()):
-				prediction_cache[board.fen()] = client.predict(util.expand_position(board), 'policy')
+				try:
+					prediction_cache[board.fen()] = self.__client.predict(util.expand_position(board), 'policy')
+				except:
+					print("Prediction error, retrying...")
+					prediction_cache[board.fen()] = self.__client.predict(util.expand_position(board), 'policy')
 			moves = list(board.legal_moves)
 			if len(moves) == 0:
 				print("No moves from position: " + board.fen() + "\n")

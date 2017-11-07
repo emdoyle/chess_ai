@@ -4,6 +4,16 @@ import numpy as np
 from os import listdir
 
 EXPORT_DIR = "/Users/evanmdoyle/Programming/ChessAI/Export/"
+BEST_VERSION = "/Users/evanmdoyle/Programming/ChessAI/best_version"
+
+def decode_result(result, turn):
+	if result == '1-0':
+		return float(turn)
+	if result == '0-1':
+		return float(not turn)
+	if result == '1/2-1/2':
+		return 0.5
+	return None
 
 def decode_symbol(symbol):
 	symbols = ['p', 'n', 'b', 'r', 'q', 'k',
@@ -53,6 +63,17 @@ def expand_position(position):
 		expanded[(12*64):] = [1]*64
 
 	return expanded
+
+def best_version():
+	with open(BEST_VERSION, 'r') as f:
+		return int(f.read())
+
+def update_best_player(version):
+	if type(version) != int:
+		print("Invalid version number for best player")
+		return
+	with open(BEST_VERSION, 'w') as f:
+		f.write(version)
 
 def latest_version():
 	versions = listdir(EXPORT_DIR)

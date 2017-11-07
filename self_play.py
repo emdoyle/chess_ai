@@ -6,7 +6,6 @@ import chess
 import os
 import datetime
 import numpy as np
-import tensorflow as tf
 import pychess_utils as util
 
 from chess import pgn
@@ -14,19 +13,9 @@ from deepmind_mcts import MCTS
 
 PGN_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/pgn/"
 DATA_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
-GAME_BATCH_SIZE = 3
+GAME_BATCH_SIZE = 30
 CLAIM_DRAW = True
 ENGINE_NAME = "ACZ"
-EXPORTER = chess.pgn.StringExporter(headers=True, variations=True, comments=True)
-
-def decode_result(result, turn):
-	if result == '1-0':
-		return float(turn)
-	if result == '0-1':
-		return float(not turn)
-	if result == '1/2-1/2':
-		return 0.5
-	return None
 
 def extract_csv_string(arr):
 	return ','.join(map(str, arr))
@@ -37,15 +26,15 @@ def write_board_data(boards, mcts_policy_strings, result):
 			print("Recorded different number of boards and policies.")
 		for i in range(len(boards)):
 			board = boards[i]
-			curr_result = decode_result(result, board.turn)
+			curr_result = util.decode_result(result, board.turn)
 			board = util.expand_position(boards[i])
 			policy = mcts_policy_strings[i]
-			f.write(extract_csv_string(board+[policy]+[curr_result]))
+			f.write(extract_csv_string(board+[policy]+[curr_result])+"\n")
 
 def write_game_data(game):
-	game = game.accept(EXPORTER)
-	with open(PGN_DIR+util.latest_version()+"/"+str(
-		len(os.listdir(PGN_DIR+util.latest_version()))+".pgn"), "w") as f:
+	game = game.accept(chess.pgn.StringExporter(headers=True, variations=True, comments=True))
+	with open(PGN_DIR+str(util.latest_version())+"/"+str(
+		len(os.listdir(PGN_DIR+str(util.latest_version()))))+".pgn", "w") as f:
 		f.write(game)
 
 def play_game():
