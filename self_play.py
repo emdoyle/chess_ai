@@ -45,7 +45,7 @@ def write_board_data(boards, mcts_policy_strings, result):
 def write_game_data(game):
 	game = game.accept(EXPORTER)
 	with open(PGN_DIR+util.latest_version()+"/"+str(
-		len(os.listdir(PGN_DIR+util.latest_version()))), "w") as f:
+		len(os.listdir(PGN_DIR+util.latest_version()))+".pgn"), "w") as f:
 		f.write(game)
 
 def play_game():
