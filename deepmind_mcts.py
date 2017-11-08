@@ -117,7 +117,7 @@ class MCTS:
 	ITER_TIME = 15
 
 	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None,
-		prev_mcts=None, temperature=True, version=util.latest_version()):
+		prev_mcts=None, temperature=True, version=util.latest_version(), startcolor=True):
 		self.version = version
 		# gRPC client to query the trained model at localhost:9000
 		# SERVER MUST BE RUNNING LOCALLY
@@ -129,9 +129,9 @@ class MCTS:
 			self.__root = prev_mcts.child_matching(self.startpos)
 			if not self.__root:
 				print("Could not find move in previous tree.")
-				self.__root = Node(True, position=chess.Board())
+				self.__root = Node(startcolor, position=self.startpos)
 		else:
-			self.__root = Node(True, position=chess.Board())
+			self.__root = Node(startcolor, position=self.startpos)
 
 		self.iterations = iterations if iterations else self.ITERATIONS_PER_BUILD
 		self.iter_time = iter_time if iter_time else self.ITER_TIME
@@ -141,7 +141,6 @@ class MCTS:
 	def child_matching(self, position):
 		if not self.__root.children:
 			return None
-
 		for child, edge in self.__root.children:
 			if child.position == position:
 				return child

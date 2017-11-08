@@ -13,16 +13,13 @@ from deepmind_mcts import MCTS
 # This should eventually go up to 400
 EVAL_GAMES = 20
 
-board = chess.Board()
 # latest version is default for MCTS
-latest_player = MCTS(startpos=board)
+latest_player = MCTS(startpos=chess.Board())
 
 # util grabs best version number from storage
-best_player = MCTS(startpos=board, version=util.best_version())
+best_player = MCTS(startpos=chess.Board(), version=util.best_version())
 
 def play_game(best_player_starts=True):
-	board = chess.Board()
-
 	turn = True
 	if best_player_starts:
 		player1 = best_player
@@ -31,6 +28,9 @@ def play_game(best_player_starts=True):
 		player1 = latest_player
 		player2 = best_player
 
+	board = player1.startpos
+	move_count = 0
+	next_temp = True
 	while not board.is_game_over(claim_draw=True):
 		if turn:
 			player = player1
@@ -49,7 +49,10 @@ def play_game(best_player_starts=True):
 		print("Move " + str(move_count) + ": " + move.uci())
 		print(board)
 		# Salvage existing statistics about the position
-		player = MCTS(startpos=board, prev_mcts=player, temperature=next_temp)
+		if turn:
+			player2 = MCTS(startpos=board, prev_mcts=player, temperature=next_temp, startcolor=board.turn)
+		else:
+			player1 = MCTS(startpos=board, prev_mcts=player, temperature=next_temp, startcolor=board.turn)
 		turn = not turn
 
 	latest_player_result = util.decode_result(board.result(claim_draw=True), not best_player_starts)
