@@ -18,13 +18,13 @@ class PredictClient():
         self.model_version = model_version
 
     def sig_to_key(self, sig):
-        if sig == 'serving_default':
+        if sig == 'serving_default' or sig == 'value':
             return 'value'
         if sig == 'policy':
             return sig
         return 'error'
 
-    def predict(self, request_data, signature_name='serving_default', request_timeout=10):
+    def predict(self, request_data, signature_name='serving_default', request_timeout=10, shape=[8*8*13]):
 
         logger.info('Sending request to tfserving model')
         logger.info('Model name: ' + str(self.model_name))
@@ -32,7 +32,7 @@ class PredictClient():
         logger.info('Host: ' + str(self.host))
 
         features_tensor_proto = tf.contrib.util.make_tensor_proto(request_data,
-                                                                    dtype=tf.float32, shape=[8*8*13])
+                                                                    dtype=tf.float32, shape=shape)
 
         # Create gRPC client and request
         channel = implementations.insecure_channel(self.host, int(self.port))
