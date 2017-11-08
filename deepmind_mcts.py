@@ -265,9 +265,9 @@ class MCTS:
 		for child, edge in self.__root.children:
 			prob = edge.simulations/total_vists
 			if prob == 1:
-				policy.append("("+str(edge.move.from_square)+str(edge.move.to_square)+":"+str(1000)+")")
+				policy.append("("+str(edge.move.from_square)+"!"+str(edge.move.to_square)+":"+str(1000)+")")
 			else:
-				policy.append("("+str(edge.move.from_square)+str(edge.move.to_square)+":"+str(util.prob_to_logit(prob))+")")
+				policy.append("("+str(edge.move.from_square)+"!"+str(edge.move.to_square)+":"+str(util.prob_to_logit(prob))+")")
 		return '-'.join(policy)
 
 	def best_move(self):

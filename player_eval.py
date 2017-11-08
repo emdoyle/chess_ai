@@ -56,11 +56,18 @@ def play_game(best_player_starts=True):
 
 	return latest_player_result
 
-for i in range(EVAL_GAMES):
-	results = 0
-	# Switch off who plays as white
-	results += play_game(best_player_starts=(i % 2 == 0))
+def main():
+	for i in range(EVAL_GAMES):
+		results = 0
+		# Switch off who plays as white
+		results += play_game(best_player_starts=(i % 2 == 0))
 
-if results >= (EVAL_GAMES*0.55):
-	# The new player won 55+% of the games and should be promoted to the best
-	util.update_best_player(latest_player.version)
+	if results >= (EVAL_GAMES*0.55):
+		print("New player won!")
+		# The new player won 55+% of the games and should be promoted to the best
+		util.update_best_player(latest_player.version)
+	else:
+		print("Old player won!")
+
+if __name__ == "__main__":
+    main()

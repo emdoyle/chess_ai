@@ -52,49 +52,37 @@ class Network:
 			feature_columns.append('turn'+str(x))
 		return feature_columns
 
-	def target_column_names(self):
+	def target_col_names(self):
 		# 'probs' here will be a string that must be decoded in model_fn
 		return ['probs', 'value']
 
+	# No longer necessary since self_play outputs array index instead of
+	# uci move
 	def convert(self, uci_move):
 		move = chess.Move.from_uci(uci_move)
 		return (move.from_square, move.to_square)
 
+	# Move probabilities are encoded into a string format as follows:
+	# "(from_square!to_square:probability)#(...)"
 	def decode(self, labels):
 		new_labels = []
-		labels = labels.split('-')
+		labels = labels.split('#')
 		for label in labels:
 			label = label.strip('(').strip(')').split(':')
-			label = (self.convert(label[0]), label[1])
+			move_index = int(label[0].split('!')[0])*64 + int(label[0].split('!')[1])
+			label = (int(move_index), float(label[1]))
 			new_labels.append(label)
 		return new_labels
 
 	def create_policy(self, labels):
 		policy = [float(0) for x in range(4096)]
-		for moves, prob in labels:
-			policy[(moves[0]*64)+moves[1]] = float(prob)
+		for move, prob in labels:
+			policy[move] = float(prob)
 		return np.array(policy)
 
-	def one_hot(self, value):
-		if value:
-			return np.array([0, 1])
-		else:
-			return np.array([1, 0])
-
-	# def single_input_fn(self, position):
-	# 	print(np.array(util.expand_position(position)))
-	# 	print(np.array([0]))
-	# 	return tf.estimator.inputs.numpy_input_fn(
-	# 		x={"x": np.array([util.expand_position(position)])},
-	# 		y=np.array([[0]]),
-	# 		batch_size=1,
-	# 		num_epochs=None,
-	# 		shuffle=False,
-	# 		num_threads=1)
-
-	def input_fn(self, data_file, num_epochs, batch_size=30, shuffle=False, num_threads=4):
+	def input_fn(self, data_file, num_epochs, batch_size=32, shuffle=False, num_threads=4):
 		feature_cols = self.feature_col_names()
-		target_cols = self.target_column_names()
+		target_cols = self.target_col_names()
 		dataset = pd.read_csv(
 			tf.gfile.Open(data_file),
 			header=0,
@@ -104,12 +92,9 @@ class Network:
 		# Drop NaN entries
 		dataset.dropna(how="any", axis=0)
 
-		# Create separate dataframe for y
 		policy_labels = dataset.probs.apply(lambda x: self.create_policy(self.decode(x)))
 		policy_labels = policy_labels.apply(pd.Series)
 
-		# value_labels = dataset.value.apply(lambda x: self.one_hot(x))
-		# value_labels = value_labels.apply(pd.Series)
 		value_labels = dataset.value
 
 		dataset.pop('probs')
@@ -209,10 +194,18 @@ class Network:
 			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=value_output_layer, labels=value_labels))
 			)
 		eval_metric_ops = {}
-		optimizer = tf.train.GradientDescentOptimizer(
-			learning_rate=0.1)
+
+		global_step = tf.Variable(0, trainable=False)
+		starter_learning_rate = 0.01
+		# TODO: Match the specs in the paper about learning rate decay
+		learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
+                                           100000, 0.96, staircase=True)
+
+		optimizer = tf.train.MomentumOptimizer(
+			learning_rate=learning_rate,
+			momentum=0.9)
 		train_op = optimizer.minimize(
-			loss=loss, global_step=tf.train.get_global_step())
+			loss=loss, global_step=global_step)
 
 		return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops,
 			export_outputs={"policy": tf.estimator.export.PredictOutput({"policy": policy_output_layer}),
