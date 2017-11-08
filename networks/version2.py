@@ -190,8 +190,8 @@ class Network:
 
 		# need to add l2 regularization
 		loss = tf.subtract(
-			tf.losses.mean_squared_error(logits=policy_output_layer, labels=policy_labels),
-			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=value_output_layer, labels=value_labels))
+			tf.losses.mean_squared_error(logits=value_output_layer, labels=value_labels),
+			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels))
 			)
 		eval_metric_ops = {}
 
