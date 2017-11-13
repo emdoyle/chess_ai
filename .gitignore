@@ -107,6 +107,7 @@ ENV/
 serving/
 WORKSPACE
 Model/
+proto_files/
 
 # Use later, maybe in another repo?
 hide/

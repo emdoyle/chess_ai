@@ -21,8 +21,8 @@ DRAW = 'draw'
 # This constant should change exploration tendencies
 CPUCT = 1.5
 
-# These caches don't kick in until second game but are vital to performance at that point
-# This delay is because initially all selected leaves are compulsory misses :(
+# Not sure these really boost performance much, but I think they should
+# help if games are played back-to-back
 prediction_cache = {}
 value_cache = {}
 
@@ -263,11 +263,8 @@ class MCTS:
 		total_vists = self.total_child_visits(self.__root)
 		for child, edge in self.__root.children:
 			prob = edge.simulations/total_vists
-			if prob == 1:
-				policy.append("("+str(edge.move.from_square)+"!"+str(edge.move.to_square)+":"+str(1000)+")")
-			else:
-				policy.append("("+str(edge.move.from_square)+"!"+str(edge.move.to_square)+":"+str(util.prob_to_logit(prob))+")")
-		return '-'.join(policy)
+			policy.append("("+str(edge.move.from_square)+"!"+str(edge.move.to_square)+":"+str(prob)+")")
+		return '#'.join(policy)
 
 	def best_move(self):
 		if self.temperature:

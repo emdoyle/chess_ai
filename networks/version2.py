@@ -18,7 +18,7 @@ from deepmind_mcts import MCTS
 
 # Less Verbose Output
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-tf.logging.set_verbosity(tf.logging.ERROR)
+tf.logging.set_verbosity(tf.logging.INFO)
 
 class Network:
 
@@ -188,22 +188,27 @@ class Network:
 					tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({"value": value_output_layer})}
 				)
 
-		# need to add l2 regularization
-		loss = tf.subtract(
-			tf.losses.mean_squared_error(logits=value_output_layer, labels=value_labels),
-			tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels))
-			)
+		# TODO: add l2 regularization
+		loss = tf.reduce_mean(tf.subtract(tf.square(tf.subtract(tf.cast(value_labels, tf.float32), value_output_layer)),
+			tf.reshape(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels), [-1,1])))
+
+		# loss = tf.reduce_mean(tf.subtract(
+		# 	tf.losses.mean_squared_error(predictions=value_output_layer, labels=value_labels),
+		# 	tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels)
+		# 	))
 		eval_metric_ops = {}
 
 		global_step = tf.Variable(0, trainable=False)
-		starter_learning_rate = 0.01
 		# TODO: Match the specs in the paper about learning rate decay
-		learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
-                                           100000, 0.96, staircase=True)
+		# learning_rate = tf.train.exponential_decay(0.01, global_step,
+		# 								   100000, 0.96, staircase=True)
+		learning_rate = 0.01
 
-		optimizer = tf.train.MomentumOptimizer(
-			learning_rate=learning_rate,
-			momentum=0.9)
+		# optimizer = tf.train.MomentumOptimizer(
+		# 	learning_rate=learning_rate,
+		# 	momentum=0.9)
+		optimizer = tf.train.GradientDescentOptimizer(
+			learning_rate=learning_rate)
 		train_op = optimizer.minimize(
 			loss=loss, global_step=global_step)
 

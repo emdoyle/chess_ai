@@ -33,8 +33,8 @@ def write_board_data(boards, mcts_policy_strings, result):
 
 def write_game_data(game):
 	game = game.accept(chess.pgn.StringExporter(headers=True, variations=True, comments=True))
-	with open(PGN_DIR+str(util.latest_version())+"/"+str(
-		len(os.listdir(PGN_DIR+str(util.latest_version()))))+".pgn", "w") as f:
+	with open(PGN_DIR+str(util.best_version())+"/"+str(
+		len(os.listdir(PGN_DIR+str(util.best_version()))))+".pgn", "w") as f:
 		f.write(game)
 
 def play_game():
@@ -42,7 +42,7 @@ def play_game():
 	# and default hyperparameters (see deepmind_mcts.py)
 	game = chess.pgn.Game()
 	board = chess.Board()
-	mcts = MCTS(startpos=board)
+	mcts = MCTS(version=util.best_version(), startpos=board)
 
 	boards = []
 	mcts_policy_strings = []
