@@ -121,7 +121,7 @@ class MCTS:
 		self.version = version
 		# gRPC client to query the trained model at localhost:9000
 		# SERVER MUST BE RUNNING LOCALLY
-		self.__client = PredictClient('127.0.0.1', 9000, 'default', int(self.version))
+		self.__client = PredictClient('127.0.0.1', 9000, 'ACZ', int(self.version))
 
 		self.startpos = startpos
 		if prev_mcts:
