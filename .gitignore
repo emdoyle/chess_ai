@@ -109,5 +109,8 @@ WORKSPACE
 Model/
 proto_files/
 
+# Hide exported model due to size
+Export/
+
 # Use later, maybe in another repo?
 hide/

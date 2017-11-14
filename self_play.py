@@ -13,7 +13,7 @@ from deepmind_mcts import MCTS
 
 PGN_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/pgn/"
 DATA_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
-GAME_BATCH_SIZE = 30
+GAME_BATCH_SIZE = 1
 CLAIM_DRAW = True
 ENGINE_NAME = "ACZ"
 

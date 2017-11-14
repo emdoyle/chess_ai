@@ -169,7 +169,7 @@ class Network:
 		policy_relu = self.custom_relu(policy_norm, name="policy_relu")
 		# policy_relu should have shape [batch, 8, 8, 2] so I want [batch, 128]
 		policy_relu = tf.reshape(policy_relu, [-1,128])
-		policy_output_layer = tf.layers.dense(inputs=policy_relu, units=4096, activation=None)
+		policy_output_layer = tf.layers.dense(inputs=policy_relu, units=4096, activation=tf.nn.sigmoid)
 
 		value_conv = self.custom_conv(residual_tower_out, 1, 1, 256, 1, name="value_conv")
 		value_norm = self.custom_batch_norm(value_conv, name="value_norm")
@@ -198,7 +198,7 @@ class Network:
 		# 	))
 		eval_metric_ops = {}
 
-		global_step = tf.Variable(0, trainable=False)
+		# global_step = tf.Variable(0, trainable=False)
 		# TODO: Match the specs in the paper about learning rate decay
 		# learning_rate = tf.train.exponential_decay(0.01, global_step,
 		# 								   100000, 0.96, staircase=True)
@@ -210,7 +210,7 @@ class Network:
 		optimizer = tf.train.GradientDescentOptimizer(
 			learning_rate=learning_rate)
 		train_op = optimizer.minimize(
-			loss=loss, global_step=global_step)
+			loss=loss, global_step=tf.train.get_global_step())
 
 		return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops,
 			export_outputs={"policy": tf.estimator.export.PredictOutput({"policy": policy_output_layer}),
