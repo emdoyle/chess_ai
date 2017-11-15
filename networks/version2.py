@@ -174,7 +174,7 @@ class Network:
 		value_conv = self.custom_conv(residual_tower_out, 1, 1, 256, 1, name="value_conv")
 		value_norm = self.custom_batch_norm(value_conv, name="value_norm")
 		value_relu = self.custom_relu(value_norm, name="value_relu")
-		# policy_relu should have shape [batch, 8, 8, 1] so I want [batch, 64]
+		# value_relu should have shape [batch, 8, 8, 1] so I want [batch, 64]
 		value_relu = tf.reshape(value_relu, [-1, 64])
 		value_hidden = tf.layers.dense(inputs=value_relu, units=256, activation=tf.nn.relu)
 		value_output_layer = tf.layers.dense(inputs=value_hidden, units=1, activation=tf.nn.tanh)
@@ -189,26 +189,25 @@ class Network:
 				)
 
 		# TODO: add l2 regularization
-		loss = tf.reduce_mean(tf.subtract(tf.square(tf.subtract(tf.cast(value_labels, tf.float32), value_output_layer)),
-			tf.reshape(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels), [-1,1])))
+		loss = tf.reduce_mean(
+			tf.subtract(
+				# (z - v)^2 where z is the self-play winner and v is the predicted value (winner)
+				tf.square(tf.subtract(tf.cast(value_labels, tf.float32), value_output_layer)),
+				# pi^T*log(p) where pi is the MCTS policy vector and p is the predicted policy vector
+				tf.reshape(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels), [-1,1]))
+			)
 
-		# loss = tf.reduce_mean(tf.subtract(
-		# 	tf.losses.mean_squared_error(predictions=value_output_layer, labels=value_labels),
-		# 	tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels)
-		# 	))
 		eval_metric_ops = {}
 
 		# global_step = tf.Variable(0, trainable=False)
 		# TODO: Match the specs in the paper about learning rate decay
-		# learning_rate = tf.train.exponential_decay(0.01, global_step,
-		# 								   100000, 0.96, staircase=True)
-		learning_rate = 0.01
+		learning_rate = tf.train.exponential_decay(0.01, tf.train.get_global_step(),
+										   100000, 0.96, staircase=True)
 
-		# optimizer = tf.train.MomentumOptimizer(
-		# 	learning_rate=learning_rate,
-		# 	momentum=0.9)
-		optimizer = tf.train.GradientDescentOptimizer(
-			learning_rate=learning_rate)
+		optimizer = tf.train.MomentumOptimizer(
+			learning_rate=learning_rate,
+			momentum=0.9)
+
 		train_op = optimizer.minimize(
 			loss=loss, global_step=tf.train.get_global_step())
 

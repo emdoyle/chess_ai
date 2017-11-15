@@ -4,6 +4,7 @@ sys.path.append(sys.path[0] + "/..")
 
 import chess
 import os
+import time
 import datetime
 import numpy as np
 import pychess_utils as util
@@ -49,7 +50,7 @@ def play_game():
 	move_count = 0
 	next_temp = True
 
-	# This works because the game is implemented as a tree of moves and it
+	# I believe his works because the game is implemented as a tree of moves and it
 	# isn't fully hidden.  I assume add_variation() creates an edge to a new node and
 	# returns it  while updating a value on the source node. 
 	# Thus, 'game' still refers to the root GameNode while 'node' refers to the deepest
@@ -57,6 +58,7 @@ def play_game():
 	node = game
 
 	while not board.is_game_over(claim_draw=True):
+		begin = time.time()
 		# Build new tree
 		mcts.build()
 		boards.append(board)
@@ -73,6 +75,8 @@ def play_game():
 		node = node.add_variation(move)
 		# Salvage existing statistics about the position
 		mcts = MCTS(startpos=board, prev_mcts=mcts, temperature=next_temp)
+		time_elapsed = time.time() - begin
+		print("Time elapsed from start of build to init next MCTS: " + str(time_elapsed))
 
 	result = board.result(claim_draw=CLAIM_DRAW)
 	write_board_data(boards, mcts_policy_strings, result)
