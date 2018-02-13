@@ -10,10 +10,12 @@ import tensorflow as tf
 import pychess_utils as util
 from deepmind_mcts import MCTS
 
-# TODO: Think of another way to encode moves?
-# 8x8 choices for source square, 8x8 choices for destination square, 64^2 possible 'moves'
-# this means a 64^2=4096 node output layer is required to define a full policy for a given
-# position.  That could slow down training significantly...might have to revisit this
+# Move Encoding (as described in AlphaZero paper):
+#	8x8x73 output layer
+#	8x8 = square from which to 'pick up' a piece
+#	56 = 'queen moves' for the piece {N, NE, E, SE, S, SW, W, NW} x {maximum 7 squares} = 56
+#	8 = 'knight moves' for the piece
+#	9 = underpromotions {N, B, R} x {left diag, forward, right diag}
 # plus 1 more target to train value per position
 
 # Less Verbose Output
@@ -26,14 +28,15 @@ class Network:
 	MODEL_DIR = "/Users/evanmdoyle/Programming/ChessAI/Model/"
 	EXPORT_DIR = "/Users/evanmdoyle/Programming/ChessAI/Export/"
 	PIECE_PREFIXES = ['p_', 'n_', 'b_', 'r_', 'q_', 'k_']
-	RESIDUAL_BLOCKS = 19
+	# The number of residual blocks was 19 in the Go paper
+	RESIDUAL_BLOCKS = 2
 
 	def __init__(self):
 		self.__nn = tf.estimator.Estimator(model_dir=self.MODEL_DIR,model_fn=self.model_fn, params={})
 
 	def export(self):
 		serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn(
-			features={'x': tf.placeholder(tf.float32, shape=[8*8*13])})
+			features={'x': tf.placeholder(tf.float32, shape=[1, 8*8*13])})
 		self.__nn.export_savedmodel(self.EXPORT_DIR, serving_input_receiver_fn)
 
 	def train(self, epochs=None, shuffle=True, steps=1):
@@ -75,7 +78,7 @@ class Network:
 		return new_labels
 
 	def create_policy(self, labels):
-		policy = [float(0) for x in range(4096)]
+		policy = [float(0) for x in range(8*8*73)]
 		for move, prob in labels:
 			policy[move] = float(prob)
 		return np.array(policy)
@@ -137,7 +140,7 @@ class Network:
 	def model_fn(self, features, labels, mode, params):
 		# Labels need to be split into policy and value
 		if mode != tf.estimator.ModeKeys.PREDICT:
-			policy_labels, value_labels = tf.split(labels, [4096, 1], axis=1)
+			policy_labels, value_labels = tf.split(labels, [8*8*73, 1], axis=1)
 
 		# Input layer comes from features, which come from input_fn
 		input_layer = tf.cast(features["x"], tf.float32)
@@ -169,7 +172,7 @@ class Network:
 		policy_relu = self.custom_relu(policy_norm, name="policy_relu")
 		# policy_relu should have shape [batch, 8, 8, 2] so I want [batch, 128]
 		policy_relu = tf.reshape(policy_relu, [-1,128])
-		policy_output_layer = tf.layers.dense(inputs=policy_relu, units=4096, activation=tf.nn.sigmoid)
+		policy_output_layer = tf.layers.dense(inputs=policy_relu, units=8*8*73, activation=tf.nn.sigmoid)
 
 		value_conv = self.custom_conv(residual_tower_out, 1, 1, 256, 1, name="value_conv")
 		value_norm = self.custom_batch_norm(value_conv, name="value_norm")
@@ -185,17 +188,18 @@ class Network:
 				mode=mode,
 				predictions=predictions,
 				export_outputs={"policy": tf.estimator.export.PredictOutput({"policy": policy_output_layer}),
-					tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({"value": value_output_layer})}
+					tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: tf.estimator.export.PredictOutput({"policy": policy_output_layer,
+						"value": value_output_layer})}
 				)
 
 		# TODO: add l2 regularization
 		loss = tf.reduce_mean(
-			tf.subtract(
+			tf.square(tf.add(
 				# (z - v)^2 where z is the self-play winner and v is the predicted value (winner)
 				tf.square(tf.subtract(tf.cast(value_labels, tf.float32), value_output_layer)),
 				# pi^T*log(p) where pi is the MCTS policy vector and p is the predicted policy vector
 				tf.reshape(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels), [-1,1]))
-			)
+			))
 
 		eval_metric_ops = {}
 

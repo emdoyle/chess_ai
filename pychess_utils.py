@@ -64,6 +64,89 @@ def expand_position(position):
 
 	return expanded
 
+def dir_and_dist(square1, square2):
+	rank1 = chess.square_rank(square1)
+	rank2 = chess.square_rank(square2)
+	file1 = chess.square_file(square1)
+	file2 = chess.square_file(square2)
+
+	horiz = 'W' if file1 > file2 else 'E'
+	vert = 'S' if rank1 > rank2 else 'N'
+
+	filedist = abs(file1 - file2)
+	rankdist = abs(rank1 - rank2)
+	diag = filedist == rankdist
+	straight = filedist == 0 or rankdist == 0
+	knight = (filedist == 1 and rankdist == 2) or (filedist == 2 and rankdist == 1)
+	far = 'F' if rankdist == 2 else 'S'
+
+	if diag:
+		dist = filedist
+		return {'dir': '{}{}'.format(vert, horiz), 'dist': dist}
+	elif straight:
+		queen_dir = horiz if filedist != 0 else vert
+		dist = filedist if filedist != 0 else rankdist
+		return {'dir': '{}'.format(queen_dir), 'dist': dist}
+	elif knight:
+		# The distance should not be needed when handling a knight move, -1 is an indicator
+		return {'dir': '{}{}{}'.format(vert, horiz, far), 'dist': -1}
+
+
+# Move Encoding (as described in AlphaZero paper):
+#	8x8x73 output layer
+#	8x8 = square from which to 'pick up' a piece
+#	56 = 'queen moves' for the piece {N, NE, E, SE, S, SW, W, NW} x {maximum 7 squares} = 56
+#	8 = 'knight moves' for the piece
+#	9 = underpromotions {N, B, R} x {left diag, forward, right diag}
+# plus 1 more target to train value per position
+def get_prediction_index(move):
+	num_queen_moves = 56
+	num_knight_moves = 8
+	queen_map = {
+		'N': 0,
+		'NE': 1,
+		'E': 2,
+		'SE': 3,
+		'S': 4,
+		'SW': 5,
+		'W': 6,
+		'NW': 7
+	}
+	knight_map = {
+		'NWF': 0,
+		'NWS': 1,
+		'NEF': 2,
+		'NES': 3,
+		'SEF': 4,
+		'SES': 5,
+		'SWF': 6,
+		'SWS': 7
+	}
+	# there are 73 entries for each from_square
+	from_index = move.from_square*73
+	dir_dist = dir_and_dist(move.from_square, move.to_square)
+	direction = dir_dist['dir']
+	distance = dir_dist['dist']
+
+	if distance == -1:
+		offset = num_queen_moves + knight_map[direction]
+	elif move.promotion:
+		left = direction == 'NW' or direction == 'SE'
+		right = direction == 'NE' or direction == 'SW'
+		straight = direction == 'N' or direction == 'S'
+
+		# move.promotion maps 5: Q, 4: R, 3: B, 2: N
+		if left:
+			offset = num_queen_moves + num_knight_moves + (move.promotion-2)*3
+		elif right:
+			offset = num_queen_moves + num_knight_moves + (move.promotion-2)*3 + 1
+		elif straight:
+			offset = num_queen_moves + num_knight_moves + (move.promotion-2)*3 + 2
+	else:
+		offset = queen_map[direction]*7 + distance
+
+	return from_index + offset
+
 def best_version():
 	with open(BEST_VERSION, 'r') as f:
 		return int(f.read())

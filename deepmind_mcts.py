@@ -113,8 +113,8 @@ class MCTS:
 
 	# 1600 Iterations is simply too intense for this machine...
 	# Need to look into splitting into threads, queuing requests and cloud resources
-	ITERATIONS_PER_BUILD = 1600
-	ITER_TIME = 15
+	ITERATIONS_PER_BUILD = 10
+	ITER_TIME = 5
 
 	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None,
 		prev_mcts=None, temperature=True, version=util.latest_version(), startcolor=True):
@@ -238,8 +238,9 @@ class MCTS:
 				print("No moves from position: " + board.fen() + "\n")
 			for selected_move in moves:
 				new_board = copy.deepcopy(board)
+				pred_index = util.get_prediction_index(selected_move)
 				new_edge = Edge(leaf, selected_move,
-						util.logit_to_prob(prediction_cache[board.fen()][(selected_move.from_square*64)+selected_move.to_square])
+						util.logit_to_prob(prediction_cache[board.fen()][pred_index])
 						)
 				new_board.push(selected_move)
 				new_node = Node(not leaf.color, parent=leaf, position=new_board)
