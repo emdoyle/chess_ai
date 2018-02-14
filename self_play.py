@@ -34,6 +34,8 @@ def write_board_data(boards, mcts_policy_strings, result):
 
 def write_game_data(game):
 	game = game.accept(chess.pgn.StringExporter(headers=True, variations=True, comments=True))
+	if not os.path.exists(PGN_DIR+str(util.best_version())):
+		os.makedirs(PGN_DIR+str(util.best_version()))
 	with open(PGN_DIR+str(util.best_version())+"/"+str(
 		len(os.listdir(PGN_DIR+str(util.best_version()))))+".pgn", "w") as f:
 		f.write(game)

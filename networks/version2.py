@@ -72,8 +72,7 @@ class Network:
 		labels = labels.split('#')
 		for label in labels:
 			label = label.strip('(').strip(')').split(':')
-			move_index = int(label[0].split('!')[0])*64 + int(label[0].split('!')[1])
-			label = (int(move_index), float(label[1]))
+			label = (int(label[0]), float(label[1]))
 			new_labels.append(label)
 		return new_labels
 

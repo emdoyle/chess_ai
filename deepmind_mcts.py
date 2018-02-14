@@ -113,7 +113,7 @@ class MCTS:
 
 	# 1600 Iterations is simply too intense for this machine...
 	# Need to look into splitting into threads, queuing requests and cloud resources
-	ITERATIONS_PER_BUILD = 10
+	ITERATIONS_PER_BUILD = 35
 	ITER_TIME = 5
 
 	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None,
@@ -160,10 +160,14 @@ class MCTS:
 	def most_visited_child(self, root):
 		max_visits = 0
 		max_edge = None
+		choices = []
 		for child, edge in root.children:
+			if edge.move.promotion:
+				print("{} is an option with {} sims".format(edge.move, edge.simulations))
 			if edge.simulations >= max_visits:
 				max_edge = edge
-		return max_edge
+				choices.append(edge)
+		return random.choice(choices)
 
 	def total_child_visits(self, root):
 		visits = 0
@@ -264,7 +268,7 @@ class MCTS:
 		total_vists = self.total_child_visits(self.__root)
 		for child, edge in self.__root.children:
 			prob = edge.simulations/total_vists
-			policy.append("("+str(edge.move.from_square)+"!"+str(edge.move.to_square)+":"+str(prob)+")")
+			policy.append("("+str(util.get_prediction_index(edge.move))+":"+str(prob)+")")
 		return '#'.join(policy)
 
 	def best_move(self):
