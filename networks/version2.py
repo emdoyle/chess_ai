@@ -24,9 +24,9 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 class Network:
 
-	DATA_FILE = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
-	MODEL_DIR = "/Users/evanmdoyle/Programming/ChessAI/Model/"
-	EXPORT_DIR = "/Users/evanmdoyle/Programming/ChessAI/Export/"
+	DATA_FILE = "ACZData/self_play.csv"
+	MODEL_DIR = "Model/"
+	EXPORT_DIR = "Export/"
 	PIECE_PREFIXES = ['p_', 'n_', 'b_', 'r_', 'q_', 'k_']
 	# The number of residual blocks was 19 in the Go paper
 	RESIDUAL_BLOCKS = 2

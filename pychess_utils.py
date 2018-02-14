@@ -3,8 +3,10 @@ import math
 import numpy as np
 from os import listdir
 
-EXPORT_DIR = "/Users/evanmdoyle/Programming/ChessAI/Export/"
-BEST_VERSION = "/Users/evanmdoyle/Programming/ChessAI/best_version"
+EXPORT_DIR = "Export/"
+BEST_VERSION = "best_version.txt"
+PORT = "port.txt"
+ADDRESS = "address.txt"
 
 def decode_result(result, turn):
 	if result == '1-0':
@@ -161,6 +163,14 @@ def update_best_player(version):
 def latest_version():
 	versions = listdir(EXPORT_DIR)
 	return sorted(versions, reverse=True)[0]
+
+def get_address():
+	with open(ADDRESS, 'r') as f:
+		return str(f.read())
+
+def get_port():
+	with open(PORT, 'r') as f:
+		return int(f.read())
 
 def logit_to_prob(logit):
 	# logit is log(p/(1-p))

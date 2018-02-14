@@ -26,6 +26,9 @@ CPUCT = 1.5
 prediction_cache = {}
 value_cache = {}
 
+ADDRESS = util.get_address()
+PORT = util.get_port()
+
 class Edge:
 
 	def __init__(self, node, move, prob, simulations=0, total_action_value=0, action_value=0):
@@ -121,7 +124,7 @@ class MCTS:
 		self.version = version
 		# gRPC client to query the trained model at localhost:9000
 		# SERVER MUST BE RUNNING LOCALLY
-		self.__client = PredictClient('127.0.0.1', 9000, 'ACZ', int(self.version))
+		self.__client = PredictClient(ADDRESS, PORT, 'ACZ', int(self.version))
 
 		self.startpos = startpos
 		if prev_mcts:

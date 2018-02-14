@@ -12,8 +12,8 @@ import pychess_utils as util
 from chess import pgn
 from deepmind_mcts import MCTS
 
-PGN_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/pgn/"
-DATA_DIR = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
+PGN_DIR = "ACZData/pgn/"
+DATA_DIR = "ACZData/self_play.csv"
 GAME_BATCH_SIZE = 1
 CLAIM_DRAW = True
 ENGINE_NAME = "ACZ"
