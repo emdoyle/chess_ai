@@ -107,7 +107,6 @@ ENV/
 serving/
 WORKSPACE
 Model/
-proto_files/
 
 # Hide exported model due to size
 Export/
