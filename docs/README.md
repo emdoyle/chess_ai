@@ -62,6 +62,8 @@ This will pit the best version vs. the latest version of ACZ and update `best_ve
 if and only if the latest wins 55% of the games.
   
 And repeat!
+
+NOTE: Every game played by a given model is recorded in `ACZData/pgn/{model_number}/`
   
 ### HUGE Disclaimer
 
