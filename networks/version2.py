@@ -197,7 +197,7 @@ class Network:
 				# (z - v)^2 where z is the self-play winner and v is the predicted value (winner)
 				tf.square(tf.subtract(tf.cast(value_labels, tf.float32), value_output_layer)),
 				# pi^T*log(p) where pi is the MCTS policy vector and p is the predicted policy vector
-				tf.reshape(tf.nn.softmax_cross_entropy_with_logits(logits=policy_output_layer, labels=policy_labels), [-1,1]))
+				tf.reshape(tf.nn.softmax_cross_entropy_with_logits_v2(logits=policy_output_layer, labels=policy_labels), [-1,1]))
 			))
 
 		eval_metric_ops = {}

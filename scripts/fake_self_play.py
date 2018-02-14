@@ -1,4 +1,11 @@
-DST_FILE = "/Users/evanmdoyle/Programming/ChessAI/ACZData/self_play.csv"
+# I absolutely hate this sys path stuff
+import sys
+sys.path.append(sys.path[0] + "/..")
+
+import random
+import chess
+import pychess_utils as util
+DST_FILE = "ACZData/self_play.csv"
 PIECE_PREFIXES = ['p_', 'n_', 'b_', 'r_', 'q_', 'k_']
 
 def feature_col_names():
@@ -24,12 +31,23 @@ with open(DST_FILE, 'w') as f:
 		if name != 'value':
 			f.write(',')
 	f.write("\n")
-	for i in range(5):
+	turn = True
+	board = chess.Board()
+	for i in range(500):
+		turn = not turn
 		for name in (feature_col_names() + target_column_names()):
-			if name != 'probs':
-				f.write("0")
+			if name != 'probs' and 'turn' not in name:
+				f.write(str(random.randint(0,1)))
+			elif 'turn' in name:
+				f.write(str(int(turn)))
 			else:
-				f.write("(a1b1:0.62)")
+				rand_move = random.choice(list(board.legal_moves))
+				prob = random.uniform(0,1)
+				f.write("({}:{})".format(
+					util.get_prediction_index(rand_move),
+					prob))
+				board.push(rand_move)
+
 			if name != 'value':
 				f.write(',')
 		f.write("\n")

@@ -120,8 +120,8 @@ class MCTS:
 	ITER_TIME = 5
 
 	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None,
-		prev_mcts=None, temperature=True, version=util.latest_version(), startcolor=True):
-		self.version = version
+		prev_mcts=None, temperature=True, version=0, startcolor=True):
+		self.version = version if version else util.latest_version()
 		# gRPC client to query the trained model at localhost:9000
 		# SERVER MUST BE RUNNING LOCALLY
 		self.__client = PredictClient(ADDRESS, PORT, 'ACZ', int(self.version))
@@ -283,7 +283,10 @@ class MCTS:
 				chances[edge.move.uci()] = edge.simulations
 			# This does a weighted random selection based on simulations
 			choice = random.choice(choices)
-			print(choice.uci() + " was chosen with chance: " + str(chances[choice.uci()]/len(choices)) + " out of " + str(len(self.__root.children)) + " options.")
+			print("{0} was chosen with chance: {1:.4f} out of {2} options".format(
+				choice.uci(),
+				float(chances[choice.uci()])/float(len(choices)),
+				len(self.__root.children)))
 			return choice
 		else:
 			return self.most_visited_child(self.__root).move
