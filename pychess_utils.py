@@ -158,7 +158,7 @@ def update_best_player(version):
 		print("Invalid version number for best player")
 		return
 	with open(BEST_VERSION, 'w') as f:
-		f.write(version)
+		f.write(str(version))
 
 def latest_version():
 	versions = listdir(EXPORT_DIR)

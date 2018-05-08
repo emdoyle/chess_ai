@@ -59,7 +59,7 @@ def play_game():
 	# or final node in the tree. TODO: Check source code
 	node = game
 
-	while not board.is_game_over(claim_draw=True):
+	while not board.is_game_over(claim_draw=True) and not move_count >= 200:
 		begin = time.time()
 		# Build new tree
 		mcts.build()
@@ -80,7 +80,7 @@ def play_game():
 		time_elapsed = time.time() - begin
 		print("Time elapsed from start of build to init next MCTS: " + str(time_elapsed))
 
-	result = board.result(claim_draw=CLAIM_DRAW)
+	result = board.result(claim_draw=CLAIM_DRAW) if move_count < 200 else "1/2-1/2"
 	write_board_data(boards, mcts_policy_strings, result)
 
 	game.headers["White"] = ENGINE_NAME

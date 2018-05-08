@@ -165,8 +165,6 @@ class MCTS:
 		max_edge = None
 		choices = []
 		for child, edge in root.children:
-			if edge.move.promotion:
-				print("{} is an option with {} sims".format(edge.move, edge.simulations))
 			if edge.simulations >= max_visits:
 				max_edge = edge
 				choices.append(edge)

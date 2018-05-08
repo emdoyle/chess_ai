@@ -11,7 +11,7 @@ from chess import pgn
 from deepmind_mcts import MCTS
 
 # This should eventually go up to 400
-EVAL_GAMES = 20
+EVAL_GAMES = 10
 
 # latest version is default for MCTS
 latest_player = MCTS(startpos=chess.Board())
@@ -31,7 +31,7 @@ def play_game(best_player_starts=True):
 	board = player1.startpos
 	move_count = 0
 	next_temp = True
-	while not board.is_game_over(claim_draw=True):
+	while not board.is_game_over(claim_draw=True) and not move_count >= 200:
 		if turn:
 			player = player1
 		else:
@@ -55,7 +55,7 @@ def play_game(best_player_starts=True):
 			player1 = MCTS(startpos=board, prev_mcts=player, temperature=next_temp, startcolor=board.turn)
 		turn = not turn
 
-	latest_player_result = util.decode_result(board.result(claim_draw=True), not best_player_starts)
+	latest_player_result = util.decode_result(board.result(claim_draw=True), not best_player_starts) if move_count < 200 else 0.5
 
 	return latest_player_result
 
@@ -70,7 +70,7 @@ def main():
 		# The new player won 55+% of the games and should be promoted to the best
 		util.update_best_player(latest_player.version)
 	else:
-		print("Old player won!")
+		print("New player did not reach 55% wins, best player unchanged.")
 
 if __name__ == "__main__":
     main()
