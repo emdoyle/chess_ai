@@ -162,7 +162,7 @@ def update_best_player(version):
 
 def latest_version():
 	versions = listdir(EXPORT_DIR)
-	return sorted(versions, reverse=True)[0]
+	return int(sorted(versions, reverse=True)[0])
 
 def get_address():
 	with open(ADDRESS, 'r') as f:

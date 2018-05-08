@@ -1,0 +1,11 @@
+model_config_list: {
+  config: {
+    name: "ACZ",
+    base_path: "/home/evan/Programming/chess_ai/Export/"    model_platform: "tensorflow",
+    model_version_policy: {
+      specific: {
+        versions: [ 1518630696, 1518604026 ]
+      }
+    }
+  }
+}
