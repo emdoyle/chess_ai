@@ -19,7 +19,7 @@ def main():
 				line += "[ " + str(util.latest_version()) + ", " + str(util.best_version()) + " ]\n"
 			elif line.find(BASE_PATH) != -1:
 				line = line[:line.index(BASE_PATH)+len(BASE_PATH)]
-				line += "\""+os.getcwd()+"/Export/\""
+				line += "\""+os.getcwd()+"/Export/\"\n"
 			f.write(line)
 
 

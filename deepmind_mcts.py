@@ -116,7 +116,7 @@ class MCTS:
 
 	# 1600 Iterations is simply too intense for this machine...
 	# Need to look into splitting into threads, queuing requests and cloud resources
-	ITERATIONS_PER_BUILD = 35
+	ITERATIONS_PER_BUILD = 100
 	ITER_TIME = 5
 
 	def __init__(self, startpos=chess.Board(), iterations=None, iter_time=None,
